@@ -30,6 +30,7 @@ mini-game-replicas/
 | [Element Forge 元素熔炉](games/element-forge/) | 元素熔炼：106 词条合成表 + 中文构词法原创合成，图鉴收集 | ✅ 测试通过 · 审查通过 |
 | [Angler's Almanac 渔汛录](games/angler-almanac/) | 钓鱼图鉴：抛竿 → 抢起竿时机 → 遛鱼收放线，44 种鱼 + 水层解锁 | ✅ 测试通过 · 审查通过 |
 | [Tetra Cascade 无尽方块](games/tetra-cascade/) | 经典消行：7-bag 随机 + 自研旋转踢墙 + 方块图鉴 21 条里程碑 | ✅ 测试通过 · 审查通过 |
+| [Ball Foundry 落球坊](games/ball-foundry/) | 物理沙盒：确定性定步长物理 + 7 种材质手感 + 材质图鉴 | ✅ 测试通过 · 审查通过 |
 
 ## 质量闸门
 
@@ -64,6 +65,7 @@ python3 -m http.server 8080
 # 打开 http://127.0.0.1:8080/games/element-forge/
 # 打开 http://127.0.0.1:8080/games/angler-almanac/
 # 打开 http://127.0.0.1:8080/games/tetra-cascade/
+# 打开 http://127.0.0.1:8080/games/ball-foundry/
 ```
 
 ## 约定

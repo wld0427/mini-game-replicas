@@ -11,6 +11,7 @@
 | 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
+| 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | https://x8em21oko54pj.space.mcode.cn | 已交付 |
 
 ## 已部署
 
@@ -20,6 +21,7 @@
 | Element Forge | https://h3insrj3ydjpe.space.mcode.cn | 2026-11-25 |
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
 | Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
+| Ball Foundry | https://x8em21oko54pj.space.mcode.cn | 2026-11-25 |
 
 ## GitHub 同步状态
 
@@ -66,10 +68,24 @@
 >   （三角波标记 + 甜区 + 张力），所以既能单测也能让冒烟测试真的玩通关。
 > - 无尽方块 → `games/tetra-cascade/`（Tetra Cascade 无尽方块）。旋转态**机械生成**并由单测守护
 >   （每个旋转态必须等于上一个旋转 90°），踢墙表自研；收集层做成「7 种方块 × 3 条里程碑」共 21 条。
+> - 落球物理沙盒 → `games/ball-foundry/`（Ball Foundry 落球坊）。物理写成**定步长确定性模拟**，
+>   于是「帧率无关 / 防穿模 / 堆叠不穿透 / 手感层」都能直接写成断言，而不是只能靠肉眼。
 
 > 已完成并移出候选池：单词合成器 → 实际落成 `games/element-forge/`（Element Forge 元素熔炉）。
 > 本作把「AI 兜底造词」换成了**本地确定性构词引擎**（定语 + 中心语），
 > 避免外部 API 依赖，同时保留「同一配方永远同一结果、可抄配方」的核心体验。
+
+## 外部资源：游戏开发 skills
+
+- 已安装 [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills)
+  的**引擎无关**部分到 `/workspace/.skills/`：`physics-tuning` / `game-feel` / `input-systems` /
+  `audio-design` / `game-ui-ux` / `save-systems` / `performance-optimization` / `game-jam` + `router`。
+- 每个 skill 末尾追加了「本仓库适配」小节：把这些技能里 Godot / Unity 的写法映射到
+  本仓库的**零构建 vanilla JS 静态站**（固定步长物理、无引擎相机 / 粒子节点、DOM / SVG 渲染）。
+- 落地效果：`games/ball-foundry/` 直接按 `physics-tuning` 的建议实现了定步长 + 渲染插值 +
+  单帧步数上限 + 速度上限防穿模 + 多趟求解器迭代；按 `game-feel` 实现了创伤抖动与打击停顿，
+  并把技能要求的「同一事件 30ms 内触发两次 → 时间倍率必须回到 1.0」写成了单测。
+- 其余引擎专属 skill（Godot / Unity / Unreal / Phaser / three.js 等）与本仓库的零构建约束冲突，未安装。
 
 ## 每轮执行清单
 
