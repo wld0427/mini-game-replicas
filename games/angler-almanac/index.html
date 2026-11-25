@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Angler's Almanac 渔汛录 — 钓鱼图鉴小游戏</title>
+<meta name="description" content="渔汛录 Angler's Almanac：抛竿、等咬钩、抢起竿时机、遛鱼收线，把整本鱼谱钓满。含装备升级、稀有度、保底与图鉴收集。">
+<meta name="theme-color" content="#0a1620">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230a1620'/%3E%3Cpath d='M18 50c14-20 40-20 54 0-14 20-40 20-54 0z' fill='%235fc8e8'/%3E%3Cpath d='M72 50l16-14v28z' fill='%23399ec4'/%3E%3Ccircle cx='32' cy='46' r='4' fill='%230a1620'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="skip-link" href="#stage">跳到抛竿区</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 44" width="32" height="22" focusable="false">
+        <path d="M6 22c10-15 28-15 38 0-10 15-28 15-38 0z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M44 22l12-9v18z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="17" cy="19" r="2.6" fill="currentColor"/>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1 id="game-title">Angler's Almanac</h1>
+      <p id="game-subtitle" class="muted">抛竿、等待、咬钩、起竿、遛鱼 —— 把整本鱼谱钓满</p>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="lang-switch" role="group" id="lang-switch" aria-label="Language">
+      <button type="button" data-lang="zh" class="lang-btn is-active">中文</button>
+      <button type="button" data-lang="en" class="lang-btn">EN</button>
+      <button type="button" data-lang="ja" class="lang-btn">日本語</button>
+    </div>
+    <button type="button" id="reset-btn" class="ghost-btn" data-i18n="reset">重置进度</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="scene-wrap" id="stage" aria-labelledby="stage-title">
+    <h2 class="visually-hidden" id="stage-title">Fishing</h2>
+
+    <div class="scene" id="scene" data-phase="idle">
+      <div class="sky" aria-hidden="true"></div>
+      <div class="water" aria-hidden="true">
+        <div class="wave wave-1"></div>
+        <div class="wave wave-2"></div>
+        <div class="bobber" id="bobber"><span class="bobber-flag"></span></div>
+        <div class="splash" id="splash"></div>
+      </div>
+      <div class="scene-status">
+        <p class="phase" id="phase-text">准备下竿</p>
+        <p class="phase-sub" id="phase-sub"></p>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button type="button" id="cast-btn" class="cast-btn" data-i18n="cast">抛竿</button>
+      <button type="button" id="hook-btn" class="hook-btn" data-i18n="hook" hidden>起竿！</button>
+    </div>
+
+    <div class="reel-panel" id="reel-panel" hidden>
+      <p class="reel-hint" data-i18n="reel_hint">标记进入绿区时点击收线</p>
+      <div class="reel-body">
+        <div class="timing-track" id="timing-track" aria-hidden="true">
+          <div class="sweet-zone" id="sweet-zone"></div>
+          <div class="timing-marker" id="timing-marker"></div>
+        </div>
+        <div class="tension">
+          <p class="tension-label" data-i18n="reel_tension">线的拉力</p>
+          <div class="tension-track">
+            <div class="tension-fill" id="tension-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="catch-zone" aria-live="polite">
+      <article class="catch-card" id="catch-card" data-tier="none" hidden>
+        <div class="catch-art" id="catch-art"></div>
+        <div class="catch-body">
+          <p class="catch-name" id="catch-name">—</p>
+          <p class="catch-meta">
+            <span class="tier-pill" id="catch-tier">—</span>
+            <span class="catch-size" id="catch-size"></span>
+            <span class="badge" id="catch-new" hidden>NEW</span>
+            <span class="badge badge-big" id="catch-big" hidden>大个体</span>
+          </p>
+          <p class="catch-coins" id="catch-coins"></p>
+        </div>
+      </article>
+    </div>
+
+    <dl class="stats" id="stats">
+      <div class="stat"><dt data-i18n="stat_coins">铜钱</dt><dd id="stat-coins">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_dex">图鉴</dt><dd id="stat-dex">0/0</dd></div>
+      <div class="stat"><dt data-i18n="stat_catches">收获</dt><dd id="stat-catches">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_best">最大</dt><dd id="stat-best">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_depth">水层</dt><dd id="stat-depth">浅滩</dd></div>
+      <div class="stat"><dt data-i18n="stat_pity">保底</dt><dd id="stat-pity">0/10</dd></div>
+    </dl>
+  </section>
+
+  <aside class="side">
+    <section class="panel" aria-labelledby="shop-title">
+      <h2 id="shop-title" data-i18n="shop">装备</h2>
+      <div class="shop" id="shop"></div>
+      <p class="muted small" data-i18n="shop_hint">铜钱来自上钩的鱼</p>
+    </section>
+
+    <section class="panel" aria-labelledby="dex-title">
+      <h2 id="dex-title" data-i18n="dex">鱼谱</h2>
+      <div class="dex" id="dex"></div>
+      <p class="muted small" id="dex-meta"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="ach-title">
+      <h2 id="ach-title" data-i18n="achievements">成就</h2>
+      <ul class="achievements" id="achievements"></ul>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot muted small">
+  <span data-i18n="footer">原创实现 · 玩法致敬休闲钓鱼 / 图鉴收集类网页小游戏</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
