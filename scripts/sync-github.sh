@@ -78,25 +78,39 @@ else
   log "→ 已提交：$(git rev-parse --short HEAD)"
 fi
 
-# ── 4. 推送 ──────────────────────────────────────────
-log "→ 推送到 origin…"
+# ── 4. 同步远端 ──────────────────────────────────────
+# 定时任务在独立工作区执行，多个会话可能并发推同一个分支。
+# 直接 push 会被 remote rejected（非快进），所以先 fetch + rebase。
+log "→ 同步远端历史…"
 git remote remove origin 2>/dev/null || true
 git remote add origin "https://github.com/${OWNER}/${REPO}.git"
 
 basic="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+# 让 fetch 也能带凭证（否则 git 会卡在交互式输入用户名）
+git config "http.https://github.com/.extraheader" "AUTHORIZATION: basic ${basic}"
 
-push_ok=0
-for attempt in 1 2 3; do
-  if git -c "http.extraheader=AUTHORIZATION: basic ${basic}" \
-         -c http.version=HTTP/1.1 \
-         push -u origin "HEAD:refs/heads/${BRANCH}" 2>&1 | sed 's/^/    /'; then
-    push_ok=1
-    break
+if git fetch --quiet origin "$BRANCH" 2>/tmp/_gh_fetch.err; then
+  log "  远端已获取"
+else
+  log "  ⚠️ fetch 失败（继续尝试推送）：$(tail -n 1 /tmp/_gh_fetch.err)"
+fi
+
+if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
+  if ! git merge-base --is-ancestor "origin/${BRANCH}" HEAD 2>/dev/null; then
+    log "  远端有本地没有的提交，执行 rebase…"
+    if git rebase "origin/${BRANCH}" >/tmp/_gh_rebase.log 2>&1; then
+      log "  rebase 完成"
+    else
+      git rebase --abort >/dev/null 2>&1 || true
+      fail "rebase 冲突已中止，请人工处理。日志：$(tail -n 3 /tmp/_gh_rebase.log)"
+    fi
   fi
-  log "  第 ${attempt} 次推送失败，5 秒后重试…"
-  sleep 5
-done
+fi
 
-[ "$push_ok" = "1" ] || fail "推送失败（已重试 3 次）"
-
-log "✓ 推送完成：https://github.com/${OWNER}/${REPO}"
+# ── 5. 推送 ──────────────────────────────────────────
+log "→ 推送到 origin…"
+if bash "$(dirname "${BASH_SOURCE[0]}")/push-retry.sh" "$BRANCH"; then
+  log "✓ 推送完成：https://github.com/${OWNER}/${REPO}"
+else
+  fail "推送失败（详见上方重试日志）"
+fi

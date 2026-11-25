@@ -1,3 +1,9 @@
+# ⚠️ 这个文件放在 `ci/` 而不是 `.github/workflows/`，是有意为之。
+# classic PAT 只有 `repo` scope 时，GitHub 会拒绝任何对 `.github/workflows/`
+# 的写入，推送会被 remote rejected 拦下。
+# 等 token 拿到 `workflow` scope 后，执行 `bash scripts/enable-ci.sh`
+# 会自动把它搬进 `.github/workflows/ci.yml` 并推送。
+
 name: CI
 
 on:
