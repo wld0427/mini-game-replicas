@@ -19,11 +19,23 @@
 
 ## GitHub 同步状态
 
-- 仓库：`wld0427/mini-game-replicas`（单仓库多目录，私有）
+- 仓库：`wld0427/mini-game-replicas`（单仓库多目录，**公开**）
 - 当前状态：✅ **正常** —— 2026-11-25 凭证恢复有效，`bash scripts/sync-github.sh` 已成功推送。
-- 最近推送：`f80bf9b feat: 元素熔炉 Element Forge 复刻 + 测试`（已核对远端 `games/` 目录含 element-forge）。
-- 备注：沙箱出口 IP 共享，偶发 `gnutls_handshake()` TLS 中断；脚本内置 3 次重试，必要时手动重跑即可。
-- 凭证可用时，定时任务每轮结束会自动执行推送，无需额外操作。
+- 可见性：已设为公开（与账号既有的 12 个 fork + 自建 `claw` 保持一致）；要改回私有：
+  `PATCH /repos/wld0427/mini-game-replicas {"private":true}`
+- topics：`mini-game` `web-game` `html5` `javascript` `replica` `game` `canvas-game` `showcase`
+- 备注：沙箱出口 IP 共享，偶发 `gnutls_handshake()` TLS 中断；推送走 `scripts/push-retry.sh`（8 次指数退避重试）。
+- ⚠️ 定时任务在**独立工作区**执行，多会话并发推同一分支会分叉。`sync-github.sh` 会先
+  `fetch` + `rebase` 再推；遇到冲突脚本会中止 rebase 并报错，不要硬推。
+
+## CI 状态
+
+- 配置存放：`ci/github-actions.yml`（**不在** `.github/workflows/` 下）
+- 原因：当前 classic PAT 的 scopes 只有 `repo`，GitHub 拒绝写入 `.github/workflows/`，
+  硬放会导致**每一次推送都被 remote rejected**。
+- 启用方式：token 补上 `workflow` scope 后执行 `bash scripts/enable-ci.sh`，
+  脚本会自动把它搬进 `.github/workflows/ci.yml` 并推送。
+- CI 内容：`node scripts/review.mjs` + `node scripts/run-tests.mjs`，与本地质量闸门一致。
 
 ## 候选池（下一轮可做）
 
