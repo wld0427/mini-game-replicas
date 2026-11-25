@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ball Foundry 落球坊 — 物理弹球沙盒</title>
+<meta name="description" content="落球坊 Ball Foundry：物理沙盒弹球小游戏，7 种材质各具手感，堆满容器即结束。含材质图鉴、装备升级与保底。">
+<meta name="theme-color" content="#0b1016">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230b1016'/%3E%3Ccircle cx='50' cy='38' r='20' fill='%23ff8a5c'/%3E%3Ccircle cx='34' cy='70' r='15' fill='%2393a7bd'/%3E%3Ccircle cx='64' cy='72' r='13' fill='%23ffd166'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="skip-link" href="#field">跳到罐子</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" width="28" height="28" focusable="false">
+        <circle cx="20" cy="13" r="8" fill="currentColor"/>
+        <circle cx="12" cy="28" r="6" fill="currentColor" opacity="0.6"/>
+        <circle cx="27" cy="29" r="5" fill="currentColor" opacity="0.4"/>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1 id="game-title">Ball Foundry</h1>
+      <p id="game-subtitle" class="muted">物理沙盒 · 落球成堆 · 材质图鉴</p>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="lang-switch" role="group" id="lang-switch" aria-label="Language">
+      <button type="button" data-lang="zh" class="lang-btn is-active">中文</button>
+      <button type="button" data-lang="en" class="lang-btn">EN</button>
+      <button type="button" data-lang="ja" class="lang-btn">日本語</button>
+    </div>
+    <button type="button" id="reset-btn" class="ghost-btn" data-i18n="reset">重置进度</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="play-wrap" aria-labelledby="play-title">
+    <h2 class="visually-hidden" id="play-title">Ball Foundry</h2>
+
+    <div class="stage-wrap" id="field">
+      <svg class="field" id="field-svg" viewBox="0 0 56 92" role="img" aria-label="Container">
+        <defs>
+          <linearGradient id="canGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#16232f"/>
+            <stop offset="100%" stop-color="#0d151d"/>
+          </linearGradient>
+        </defs>
+        <rect class="can" id="can" x="0" y="0" width="56" height="92" fill="url(#canGrad)"/>
+        <line class="can-line" id="can-line" x1="0" y1="3" x2="56" y2="3"/>
+        <g id="balls"></g>
+        <g id="particles"></g>
+      </svg>
+      <p class="stage-toast" id="stage-toast" role="status" aria-live="polite" hidden></p>
+    </div>
+
+    <div class="controls" id="controls" role="group" aria-label="Controls">
+      <button type="button" id="drop-btn" class="primary-btn" data-i18n="drop">投放</button>
+      <button type="button" id="auto-btn" class="ghost-btn" aria-pressed="false">
+        <span data-i18n="auto">自动</span> <span id="auto-state">OFF</span>
+      </button>
+      <button type="button" id="clear-btn" class="ghost-btn" data-i18n="clear">清空罐子</button>
+    </div>
+
+    <p class="controls-hint muted small" data-i18n="drop_hint">点击罐子投放球体</p>
+    <p class="controls-hint muted small" data-i18n="controls_hint">点击罐子投放 · 空格投放 · A 自动 · C 清空</p>
+
+    <dl class="hud" id="hud">
+      <div class="hud-item"><dt data-i18n="stat_coins">铜钱</dt><dd id="stat-coins">0</dd></div>
+      <div class="hud-item"><dt data-i18n="stat_balls">已投放</dt><dd id="stat-balls">0</dd></div>
+      <div class="hud-item"><dt data-i18n="stat_settled">已落定</dt><dd id="stat-settled">0</dd></div>
+      <div class="hud-item"><dt data-i18n="stat_pity">保底</dt><dd id="stat-pity">0/12</dd></div>
+    </dl>
+
+    <section class="panel options" aria-labelledby="opt-title">
+      <h2 id="opt-title" data-i18n="reduce_motion">减少动效</h2>
+      <label class="opt-row">
+        <span data-i18n="shake">抖动强度</span>
+        <input type="range" id="shake-range" min="0" max="100" value="100" step="5">
+        <span class="opt-value" id="shake-value">100%</span>
+      </label>
+      <label class="opt-row">
+        <span data-i18n="reduce_motion">减少动效</span>
+        <input type="checkbox" id="motion-toggle">
+      </label>
+    </section>
+  </section>
+
+  <aside class="side">
+    <section class="panel" aria-labelledby="shop-title">
+      <h2 id="shop-title" data-i18n="shop">工坊升级</h2>
+      <div class="shop" id="shop"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="codex-title">
+      <h2 id="codex-title" data-i18n="codex">材质图鉴</h2>
+      <div class="codex" id="codex"></div>
+      <p class="muted small" id="codex-meta"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="ach-title">
+      <h2 id="ach-title" data-i18n="achievements">成就</h2>
+      <ul class="achievements" id="achievements"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="rec-title">
+      <h2 id="rec-title" data-i18n="records">纪录</h2>
+      <dl class="records" id="records">
+        <div><dt data-i18n="best_coins">单局最高铜钱</dt><dd id="rec-coins">0</dd></div>
+        <div><dt data-i18n="best_stack">最高堆叠</dt><dd id="rec-stack">0</dd></div>
+        <div><dt data-i18n="total_balls">累计投放</dt><dd id="rec-balls">0</dd></div>
+        <div><dt data-i18n="total_value">累计收入</dt><dd id="rec-value">0</dd></div>
+        <div><dt data-i18n="runs">开局次数</dt><dd id="rec-runs">0</dd></div>
+        <div><dt data-i18n="stat_pity">保底</dt><dd id="rec-pity">0/12</dd></div>
+      </dl>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot muted small">
+  <span data-i18n="footer">原创实现 · 玩法致敬物理弹球 / 增量经营类网页小游戏</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
