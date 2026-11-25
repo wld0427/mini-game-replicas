@@ -8,21 +8,22 @@
 | # | 游戏 | 上游参考 | 玩法内核 | 目录 | 单元测试 | 冒烟测试 | 静态审查 | 部署 URL | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
+| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
 
 ## 已部署
 
 | 游戏 | 公网地址 | 部署时间 |
 | --- | --- | --- |
 | Kanji Rush | https://fe84dtppzvcch.space.mcode.cn | 2026-11-25 |
+| Element Forge | https://h3insrj3ydjpe.space.mcode.cn | 2026-11-25 |
 
 ## GitHub 同步状态
 
 - 仓库：`wld0427/mini-game-replicas`（单仓库多目录，私有）
-- 当前状态：⏸️ **阻塞** —— 沙箱内的 `GITHUB_TOKEN` 调用 GitHub API 返回 `401 Bad credentials`（`Authorization: token` / `Bearer` / basic auth / query param 四种写法全部 401），该 PAT 已被吊销。
-- 附带影响：沙箱出口 IP 共享，未认证请求还会撞上 GitHub 未认证限流（60 次/小时），连公开仓库列表都查不到。
-- 恢复方式：更新 `GITHUB_TOKEN` secret（classic PAT 需 `repo` 权限，或 fine-grained PAT 勾选目标仓库的 Contents 读写）→ 重跑 `bash scripts/sync-github.sh`，脚本会自动创建仓库并推送。
+- 当前状态：✅ **正常** —— 2026-11-25 凭证恢复有效，`bash scripts/sync-github.sh` 已成功推送。
+- 最近推送：`f80bf9b feat: 元素熔炉 Element Forge 复刻 + 测试`（已核对远端 `games/` 目录含 element-forge）。
+- 备注：沙箱出口 IP 共享，偶发 `gnutls_handshake()` TLS 中断；脚本内置 3 次重试，必要时手动重跑即可。
 - 凭证可用时，定时任务每轮结束会自动执行推送，无需额外操作。
-- 当前本地已提交 git，提交历史完整，凭证恢复后一次性推送即可。
 
 ## 候选池（下一轮可做）
 
@@ -30,7 +31,6 @@
 
 | 候选 | 上游 | 玩法内核 | 备注 |
 | --- | --- | --- | --- |
-| 单词合成器 | Infinite Craft 式 | 两个词拖拽合成新词，AI 兜底造词 | 规则可程序化，测试友好 |
 | 城市生成器 | Townscaper 式 | 点格子长出房子/桥/路 | 图形程序化生成 |
 | 元素周期表配对 | 常见记忆游戏 | 元素符号配对翻牌 | 简单，但可加入倒计时 |
 | 像素画画板 | doodle 类 | 画笔/橡皮/调色板 + 导出 PNG | |
@@ -38,6 +38,12 @@
 | 反应力测试 | 反应测试类 | 点击变色计分，防作弊 | |
 | 落球物理沙盒 | 弹球类 | 重力/弹性/挡板碰撞 | 可做确定性物理测试 |
 | 2048 变体 | 2048 | 加同色合并/网格锁 | |
+| 钓鱼图鉴 | 休闲放置类 | 稀有鱼收集 + 保底 + 图鉴 | 收集/随机/增量三件套齐 |
+| 无尽方块 | 俄罗斯方块类 | 消除连击 + 方块图鉴 | 规则可测，适合加排行榜 |
+
+> 已完成并移出候选池：单词合成器 → 实际落成 `games/element-forge/`（Element Forge 元素熔炉）。
+> 本作把「AI 兜底造词」换成了**本地确定性构词引擎**（定语 + 中心语），
+> 避免外部 API 依赖，同时保留「同一配方永远同一结果、可抄配方」的核心体验。
 
 ## 每轮执行清单
 
