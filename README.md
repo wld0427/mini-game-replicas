@@ -28,6 +28,7 @@ mini-game-replicas/
 | --- | --- | --- |
 | [Kanji Rush](games/kanji-rush/) | 汉字扭蛋：按使用频次定稀有度，越抽越快 | ✅ 测试通过 · 审查通过 |
 | [Element Forge 元素熔炉](games/element-forge/) | 元素熔炼：106 词条合成表 + 中文构词法原创合成，图鉴收集 | ✅ 测试通过 · 审查通过 |
+| [Angler's Almanac 渔汛录](games/angler-almanac/) | 钓鱼图鉴：抛竿 → 抢起竿时机 → 遛鱼收放线，44 种鱼 + 水层解锁 | ✅ 测试通过 · 审查通过 |
 
 ## 质量闸门
 
@@ -60,6 +61,7 @@ npm run check     # = review + test
 python3 -m http.server 8080
 # 打开 http://127.0.0.1:8080/games/kanji-rush/
 # 打开 http://127.0.0.1:8080/games/element-forge/
+# 打开 http://127.0.0.1:8080/games/angler-almanac/
 ```
 
 ## 约定

@@ -9,6 +9,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
 | 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
+| 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
 
 ## 已部署
 
@@ -16,6 +17,7 @@
 | --- | --- | --- |
 | Kanji Rush | https://fe84dtppzvcch.space.mcode.cn | 2026-11-25 |
 | Element Forge | https://h3insrj3ydjpe.space.mcode.cn | 2026-11-25 |
+| Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
 
 ## GitHub 同步状态
 
@@ -27,6 +29,9 @@
 - 备注：沙箱出口 IP 共享，偶发 `gnutls_handshake()` TLS 中断；推送走 `scripts/push-retry.sh`（8 次指数退避重试）。
 - ⚠️ 定时任务在**独立工作区**执行，多会话并发推同一分支会分叉。`sync-github.sh` 会先
   `fetch` + `rebase` 再推；遇到冲突脚本会中止 rebase 并报错，不要硬推。
+- 2026-11-25 实测：另一会话先推了 5 个提交（CI / push-retry / TRACKER），本轮首次推送被
+  non-fast-forward 拒绝；`git fetch origin main && git rebase origin/main` 干净合并后，
+  `sync-github.sh` 第 3 次尝试推送成功。**每轮开工先 fetch + rebase**，别等推送失败再补。
 
 ## CI 状态
 
@@ -50,8 +55,14 @@
 | 反应力测试 | 反应测试类 | 点击变色计分，防作弊 | |
 | 落球物理沙盒 | 弹球类 | 重力/弹性/挡板碰撞 | 可做确定性物理测试 |
 | 2048 变体 | 2048 | 加同色合并/网格锁 | |
-| 钓鱼图鉴 | 休闲放置类 | 稀有鱼收集 + 保底 + 图鉴 | 收集/随机/增量三件套齐 |
 | 无尽方块 | 俄罗斯方块类 | 消除连击 + 方块图鉴 | 规则可测，适合加排行榜 |
+
+> 已完成并移出候选池：
+> - 单词合成器 → `games/element-forge/`（Element Forge 元素熔炉）。把「AI 兜底造词」换成
+>   **本地确定性构词引擎**（定语 + 中心语），避免外部 API 依赖，同时保留「同一配方永远同一结果、可抄配方」。
+> - 钓鱼图鉴 → `games/angler-almanac/`（Angler's Almanac 渔汛录）。做成了**三段式技巧循环**
+>   （抛竿 → 咬钩窗口抢起竿 → 遛鱼收放线），遛鱼是纯逻辑层里的确定性力学
+>   （三角波标记 + 甜区 + 张力），所以既能单测也能让冒烟测试真的玩通关。
 
 > 已完成并移出候选池：单词合成器 → 实际落成 `games/element-forge/`（Element Forge 元素熔炉）。
 > 本作把「AI 兜底造词」换成了**本地确定性构词引擎**（定语 + 中心语），
