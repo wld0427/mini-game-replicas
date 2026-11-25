@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality-gate:
+    name: 静态审查 + 测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装依赖
+        run: npm install --no-save playwright
+
+      - name: 安装 Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: 静态代码审查
+        run: node scripts/review.mjs
+
+      - name: 运行全部测试
+        run: node scripts/run-tests.mjs
