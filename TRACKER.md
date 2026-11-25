@@ -7,20 +7,22 @@
 
 | # | 游戏 | 上游参考 | 玩法内核 | 目录 | 单元测试 | 冒烟测试 | 静态审查 | 部署 URL | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | 见下方「已部署」 | 已交付 |
+| 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
 
 ## 已部署
 
 | 游戏 | 公网地址 | 部署时间 |
 | --- | --- | --- |
-| Kanji Rush | _部署后回填_ | _部署后回填_ |
+| Kanji Rush | https://fe84dtppzvcch.space.mcode.cn | 2026-11-25 |
 
 ## GitHub 同步状态
 
-- 仓库：`wld0427/mini-game-replicas`（单仓库多目录）
-- 当前状态：⏸️ **阻塞** —— 沙箱内的 `GITHUB_TOKEN` 调用 GitHub API 返回 `401 Bad credentials`，无法创建仓库与推送。
-- 恢复方式：更新 `GITHUB_TOKEN` secret（需 `repo` 权限）后重跑 `scripts/sync-github.sh`，会自动创建仓库并推送全部内容。
-- 凭证可用时，任务每轮结束会自动执行推送。
+- 仓库：`wld0427/mini-game-replicas`（单仓库多目录，私有）
+- 当前状态：⏸️ **阻塞** —— 沙箱内的 `GITHUB_TOKEN` 调用 GitHub API 返回 `401 Bad credentials`（`Authorization: token` / `Bearer` / basic auth / query param 四种写法全部 401），该 PAT 已被吊销。
+- 附带影响：沙箱出口 IP 共享，未认证请求还会撞上 GitHub 未认证限流（60 次/小时），连公开仓库列表都查不到。
+- 恢复方式：更新 `GITHUB_TOKEN` secret（classic PAT 需 `repo` 权限，或 fine-grained PAT 勾选目标仓库的 Contents 读写）→ 重跑 `bash scripts/sync-github.sh`，脚本会自动创建仓库并推送。
+- 凭证可用时，定时任务每轮结束会自动执行推送，无需额外操作。
+- 当前本地已提交 git，提交历史完整，凭证恢复后一次性推送即可。
 
 ## 候选池（下一轮可做）
 
