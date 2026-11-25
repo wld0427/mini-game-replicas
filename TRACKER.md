@@ -10,6 +10,7 @@
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
 | 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
+| 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 
 ## 已部署
 
@@ -18,6 +19,7 @@
 | Kanji Rush | https://fe84dtppzvcch.space.mcode.cn | 2026-11-25 |
 | Element Forge | https://h3insrj3ydjpe.space.mcode.cn | 2026-11-25 |
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
+| Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
 
 ## GitHub 同步状态
 
@@ -55,7 +57,6 @@
 | 反应力测试 | 反应测试类 | 点击变色计分，防作弊 | |
 | 落球物理沙盒 | 弹球类 | 重力/弹性/挡板碰撞 | 可做确定性物理测试 |
 | 2048 变体 | 2048 | 加同色合并/网格锁 | |
-| 无尽方块 | 俄罗斯方块类 | 消除连击 + 方块图鉴 | 规则可测，适合加排行榜 |
 
 > 已完成并移出候选池：
 > - 单词合成器 → `games/element-forge/`（Element Forge 元素熔炉）。把「AI 兜底造词」换成
@@ -63,6 +64,8 @@
 > - 钓鱼图鉴 → `games/angler-almanac/`（Angler's Almanac 渔汛录）。做成了**三段式技巧循环**
 >   （抛竿 → 咬钩窗口抢起竿 → 遛鱼收放线），遛鱼是纯逻辑层里的确定性力学
 >   （三角波标记 + 甜区 + 张力），所以既能单测也能让冒烟测试真的玩通关。
+> - 无尽方块 → `games/tetra-cascade/`（Tetra Cascade 无尽方块）。旋转态**机械生成**并由单测守护
+>   （每个旋转态必须等于上一个旋转 90°），踢墙表自研；收集层做成「7 种方块 × 3 条里程碑」共 21 条。
 
 > 已完成并移出候选池：单词合成器 → 实际落成 `games/element-forge/`（Element Forge 元素熔炉）。
 > 本作把「AI 兜底造词」换成了**本地确定性构词引擎**（定语 + 中心语），
