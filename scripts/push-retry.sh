@@ -15,8 +15,8 @@ cd "$REPO_DIR"
 
 git config http.version HTTP/1.1
 git config http.postBuffer 524288000
-git config http.lowSpeedLimit 1000
-git config http.lowSpeedTime 30
+git config http.lowSpeedLimit 1
+git config http.lowSpeedTime 120
 
 # 没有配置凭证时，用环境变量补上
 if [ -z "$(git config --get http.https://github.com/.extraheader || true)" ]; then
