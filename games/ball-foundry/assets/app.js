@@ -426,8 +426,8 @@ function showStageToast(text) {
 
 function doDrop(worldX) {
   if (worldX === null || worldX === undefined) {
-    if (lastDropX === null) return;
-    worldX = lastDropX;
+    // 还没在罐子里点过就从正中间投
+    worldX = lastDropX === null ? bounds.width / 2 : lastDropX;
   }
   const rolled = rollMaterial(profile, rng);
   const { ok } = dropBall(sim, rolled.id, worldX, bounds);
