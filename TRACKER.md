@@ -78,14 +78,23 @@
 ## 外部资源：游戏开发 skills
 
 - 已安装 [gamedev-skills/awesome-gamedev-agent-skills](https://github.com/gamedev-skills/awesome-gamedev-agent-skills)
-  的**引擎无关**部分到 `/workspace/.skills/`：`physics-tuning` / `game-feel` / `input-systems` /
-  `audio-design` / `game-ui-ux` / `save-systems` / `performance-optimization` / `game-jam` + `router`。
-- 每个 skill 末尾追加了「本仓库适配」小节：把这些技能里 Godot / Unity 的写法映射到
-  本仓库的**零构建 vanilla JS 静态站**（固定步长物理、无引擎相机 / 粒子节点、DOM / SVG 渲染）。
-- 落地效果：`games/ball-foundry/` 直接按 `physics-tuning` 的建议实现了定步长 + 渲染插值 +
-  单帧步数上限 + 速度上限防穿模 + 多趟求解器迭代；按 `game-feel` 实现了创伤抖动与打击停顿，
-  并把技能要求的「同一事件 30ms 内触发两次 → 时间倍率必须回到 1.0」写成了单测。
-- 其余引擎专属 skill（Godot / Unity / Unreal / Phaser / three.js 等）与本仓库的零构建约束冲突，未安装。
+  的**全部 80 个 skill**（79 个 + router）到 `/workspace/.skills/`，扁平结构 `<name>/SKILL.md`，
+  frontmatter 与目录名逐个校验通过。
+  - 引擎无关 16 个：`physics-tuning` / `game-feel` / `input-systems` / `audio-design` /
+    `game-ui-ux` / `save-systems` / `performance-optimization` / `camera-systems` /
+    `level-design` / `procedural-gen` / `game-ai` / `dialogue-systems` / `create-game-assets` /
+    `shader-programming` / `ai-behavior-trees-utility-ai` / `pixijs-rendering`
+  - 品类范式 9 个：`puzzle` / `platformer` / `roguelike` / `rpg` / `card-game` / `tower-defense` /
+    `survival-crafting` / `fps-shooter` / `visual-novel`
+  - 流程 5 个：`game-jam` / `game-docs` / `prototype-fast` / `itch-publish` / `steam-publish`
+  - 引擎专属 49 个（Godot / Unity / Unreal / Phaser / three.js / Roblox / Bevy / Defold / LÖVE / pygame / Ebitengine）
+- 每个 skill 末尾都追加了「本仓库适配」小节：把 Godot / Unity 写法映射到本仓库的
+  **零构建 vanilla JS 静态站**（定步长物理、无引擎相机 / 粒子节点、DOM / SVG 渲染、
+  WebAudio 合成音效、命名动作表输入）。引擎专属的 skill 额外标注「API 部分不适用，只取设计原则」。
+- 落地效果：`games/ball-foundry/` 直接按 `physics-tuning` 实现了定步长 + 渲染插值 + 单帧步数上限
+  + 速度上限防穿模 + 多趟求解器迭代；按 `game-feel` 实现了创伤抖动与打击停顿，
+  并把技能要求的「同一事件 30ms 内触发两次 → 时间倍率必须回到 1.0」写成了单测；
+  按 `performance-optimization` 把满罐物理的耗时写成了性能预算断言。
 
 ## 每轮执行清单
 
