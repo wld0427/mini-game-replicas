@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kanji Rush — 汉字稀有度扭蛋</title>
+<meta name="description" content="Kanji Rush：按使用频次决定稀有度的汉字扭蛋小游戏。抽得越多，演出越快。">
+<meta name="theme-color" content="#0b0d14">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b0d14'/%3E%3Ctext x='50' y='72' font-size='64' text-anchor='middle' fill='%23ffd76a' font-family='serif'%3E字%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="skip-link" href="#stage">跳到抽卡区</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">字</span>
+    <div class="brand-text">
+      <h1 id="game-title">Kanji Rush</h1>
+      <p id="game-subtitle" class="muted">按使用频次决定稀有度 · 越抽越快</p>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="lang-switch" role="group" id="lang-switch" aria-label="Language">
+      <button type="button" data-lang="zh" class="lang-btn is-active">中文</button>
+      <button type="button" data-lang="en" class="lang-btn">EN</button>
+      <button type="button" data-lang="ja" class="lang-btn">日本語</button>
+    </div>
+    <button type="button" id="reset-btn" class="ghost-btn" data-i18n="reset">重置进度</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="stage-wrap" id="stage" aria-label="Pull area">
+    <div class="stage" id="stage-el">
+      <div class="card-slot">
+        <article class="card" id="card" data-tier="none" aria-live="polite">
+          <div class="card-tier" id="card-tier">—</div>
+          <div class="card-glyph" id="card-glyph">?</div>
+            <div class="card-reading" id="card-reading"></div>
+          <div class="card-meaning" id="card-meaning"></div>
+          <div class="card-badge" id="card-badge" hidden>NEW</div>
+        </article>
+      </div>
+      <div class="tier-legend" id="tier-legend"></div>
+    </div>
+
+    <div class="controls">
+      <button type="button" id="pull-btn" class="pull-btn" data-i18n="pull">抽取</button>
+      <button type="button" id="auto-btn" class="ghost-btn" aria-pressed="false">
+        <span data-i18n="auto">自动</span> <span class="auto-state" id="auto-state">OFF</span>
+      </button>
+      <p class="hint" id="hint" data-i18n="hint">空格键抽取 · A 切换自动</p>
+    </div>
+
+    <dl class="stats" id="stats">
+      <div class="stat"><dt data-i18n="stat_pulls">抽取</dt><dd id="stat-pulls">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_unique">收集</dt><dd id="stat-unique">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_pity">保底</dt><dd id="stat-pity">0/60</dd></div>
+      <div class="stat"><dt data-i18n="stat_combo">连击</dt><dd id="stat-combo">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_tempo">间隔</dt><dd id="stat-tempo">1400ms</dd></div>
+    </dl>
+  </section>
+
+  <aside class="side">
+    <section class="panel" aria-labelledby="collection-title">
+      <h2 id="collection-title" data-i18n="collection">图鉴</h2>
+      <div class="collection" id="collection"></div>
+      <p class="muted small" id="collection-meta"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="achievement-title">
+      <h2 id="achievement-title" data-i18n="achievements">成就</h2>
+      <ul class="achievements" id="achievements"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="log-title">
+      <h2 id="log-title" data-i18n="log">最近抽取</h2>
+      <ul class="log" id="log"></ul>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot muted small">
+  <span data-i18n="footer">原创实现 · 玩法致敬汉字扭蛋类网页小游戏</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
