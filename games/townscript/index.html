@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Townscript 城痕 — 上下文生成城镇沙盒</title>
+<meta name="description" content="城痕 Townscript：点一块地起楼，邻居的形状决定它长成联排屋、孤塔、拱廊还是灯塔。含 10 种地标图鉴与工坊升级。">
+<meta name="theme-color" content="#0d1620">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230d1620'/%3E%3Crect x='18' y='56' width='28' height='28' fill='%23e8e3d9'/%3E%3Crect x='50' y='40' width='28' height='44' fill='%23d98a72'/%3E%3Crect x='50' y='26' width='28' height='16' fill='%23a85b46'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="skip-link" href="#town">跳到地图</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="28" height="28" focusable="false">
+        <rect x="3" y="16" width="11" height="11" rx="1.5" fill="currentColor"/>
+        <rect x="17" y="9" width="11" height="18" rx="1.5" fill="currentColor" opacity="0.7"/>
+        <rect x="17" y="3" width="11" height="7" rx="1.5" fill="currentColor" opacity="0.45"/>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1 id="game-title">Townscript</h1>
+      <p id="game-subtitle" class="muted">点一块地，让算法替你盖出城</p>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="lang-switch" role="group" id="lang-switch" aria-label="Language">
+      <button type="button" data-lang="zh" class="lang-btn is-active">中文</button>
+      <button type="button" data-lang="en" class="lang-btn">EN</button>
+      <button type="button" data-lang="ja" class="lang-btn">日本語</button>
+    </div>
+    <button type="button" id="reset-btn" class="ghost-btn" data-i18n="reset">重置进度</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="map-wrap" id="town" aria-labelledby="map-title">
+    <h2 class="visually-hidden" id="map-title">Town</h2>
+
+    <div class="toolbar">
+      <div class="mode-switch" role="group" aria-label="Mode">
+        <button type="button" id="build-mode" class="mode-btn is-active" aria-pressed="true" data-i18n="build">建造</button>
+        <button type="button" id="demolish-mode" class="mode-btn" aria-pressed="false" data-i18n="demolish">拆除</button>
+      </div>
+      <div class="palette" id="palette" role="group" aria-label="Palette"></div>
+      <div class="toolbar-right">
+        <button type="button" id="mode-toggle" class="ghost-btn" aria-pressed="false"><span data-i18n="free">自由建造</span></button>
+        <button type="button" id="clear-btn" class="ghost-btn" data-i18n="clear">清空</button>
+        <button type="button" id="copy-btn" class="ghost-btn" data-i18n="copy_code">复制城镇代码</button>
+      </div>
+    </div>
+
+    <p class="mode-hint muted small" id="mode-hint"></p>
+
+    <div class="town-frame">
+      <svg class="town" id="town-svg" role="img" aria-label="Town map"></svg>
+    </div>
+
+    <div class="code-row">
+      <input type="text" id="code-field" class="code-field" spellcheck="false" autocomplete="off" aria-label="Town code">
+      <button type="button" id="load-btn" class="ghost-btn" data-i18n="load_code">还原城镇</button>
+    </div>
+
+    <dl class="hud" id="hud">
+      <div class="hud-item"><dt data-i18n="stat_coins">铜钱</dt><dd id="stat-coins">0</dd></div>
+      <div class="hud-item"><dt data-i18n="stat_blocks">地基</dt><dd id="stat-blocks">0</dd></div>
+      <div class="hud-item"><dt data-i18n="stat_height">最高</dt><dd id="stat-height">0</dd></div>
+      <div class="hud-item"><dt data-i18n="stat_found">地标</dt><dd id="stat-found">0/10</dd></div>
+    </dl>
+  </section>
+
+  <aside class="side">
+    <section class="panel" aria-labelledby="shop-title">
+      <h2 id="shop-title" data-i18n="shop">工坊</h2>
+      <div class="shop" id="shop"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="dex-title">
+      <h2 id="dex-title" data-i18n="dex">地志图鉴</h2>
+      <div class="dex" id="dex"></div>
+      <p class="muted small" id="dex-meta"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="ach-title">
+      <h2 id="ach-title" data-i18n="achievements">成就</h2>
+      <ul class="achievements" id="achievements"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="rec-title">
+      <h2 id="rec-title" data-i18n="records">纪录</h2>
+      <dl class="records" id="records">
+        <div><dt data-i18n="best_coins">累计铜钱</dt><dd id="rec-coins">0</dd></div>
+        <div><dt data-i18n="best_blocks">累计地基</dt><dd id="rec-blocks">0</dd></div>
+        <div><dt data-i18n="best_height">最高楼</dt><dd id="rec-height">0</dd></div>
+        <div><dt data-i18n="found_count">已录地标</dt><dd id="rec-found">0/10</dd></div>
+      </dl>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot muted small">
+  <span data-i18n="footer">原创实现 · 玩法致敬上下文生成类城镇沙盒网页小游戏</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
