@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tetra Cascade 无尽方块 — 消除方块小游戏</title>
+<meta name="description" content="Tetra Cascade 无尽方块：七袋随机消除方块，消行连击、等级加速、方块图鉴与今日挑战。">
+<meta name="theme-color" content="#0b0e17">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230b0e17'/%3E%3Crect x='22' y='22' width='24' height='24' fill='%2345d0e6'/%3E%3Crect x='50' y='22' width='24' height='24' fill='%23c084fc'/%3E%3Crect x='22' y='50' width='24' height='24' fill='%23ffb347'/%3E%3Crect x='50' y='50' width='24' height='24' fill='%236ee7a8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<a class="skip-link" href="#board">跳到棋盘</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="28" height="28" focusable="false">
+        <rect x="2" y="2" width="13" height="13" rx="2" fill="currentColor"/>
+        <rect x="17" y="2" width="13" height="13" rx="2" fill="currentColor" opacity="0.65"/>
+        <rect x="2" y="17" width="13" height="13" rx="2" fill="currentColor" opacity="0.65"/>
+        <rect x="17" y="17" width="13" height="13" rx="2" fill="currentColor" opacity="0.4"/>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1 id="game-title">Tetra Cascade</h1>
+      <p id="game-subtitle" class="muted">七袋随机 · 消行连击 · 方块图鉴</p>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="lang-switch" role="group" id="lang-switch" aria-label="Language">
+      <button type="button" data-lang="zh" class="lang-btn is-active">中文</button>
+      <button type="button" data-lang="en" class="lang-btn">EN</button>
+      <button type="button" data-lang="ja" class="lang-btn">日本語</button>
+    </div>
+    <button type="button" id="reset-btn" class="ghost-btn" data-i18n="reset">重置进度</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="play-wrap" aria-labelledby="play-title">
+    <h2 class="visually-hidden" id="play-title">Tetra Cascade</h2>
+
+    <dl class="hud" id="hud">
+      <div class="hud-item"><dt data-i18n="score">分数</dt><dd id="stat-score">0</dd></div>
+      <div class="hud-item"><dt data-i18n="level">等级</dt><dd id="stat-level">1</dd></div>
+      <div class="hud-item"><dt data-i18n="lines">行数</dt><dd id="stat-lines">0</dd></div>
+      <div class="hud-item"><dt data-i18n="combo">连击</dt><dd id="stat-combo">0</dd></div>
+    </dl>
+
+    <div class="console">
+      <div class="side-box">
+        <p class="box-label" data-i18n="hold">暂存</p>
+        <div class="mini-grid" id="hold-box" aria-label="Hold"></div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board" id="board" role="img" aria-label="Playfield"></div>
+        <div class="overlay" id="overlay" hidden>
+          <div class="overlay-card">
+            <p class="overlay-title" id="overlay-title">准备开始</p>
+            <p class="overlay-sub" id="overlay-sub"></p>
+            <div class="overlay-stats" id="overlay-stats" hidden>
+              <div><span data-i18n="final_score">本局得分</span><b id="final-score">0</b></div>
+              <div><span data-i18n="final_lines">消行</span><b id="final-lines">0</b></div>
+              <div><span data-i18n="final_level">等级</span><b id="final-level">1</b></div>
+            </div>
+            <div class="overlay-actions">
+              <button type="button" id="start-btn" class="primary-btn" data-i18n="start">开始游戏</button>
+              <button type="button" id="daily-btn" class="ghost-btn" data-i18n="daily_start">今日挑战</button>
+            </div>
+            <p class="overlay-hint" id="overlay-hint"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-box">
+        <p class="box-label" data-i18n="next">下一个</p>
+        <div class="mini-stack" id="next-box" aria-label="Next"></div>
+      </div>
+    </div>
+
+    <div class="controls" id="controls" aria-label="Touch controls">
+      <button type="button" class="ctl" data-act="left" aria-label="Left">◀</button>
+      <button type="button" class="ctl" data-act="ccw" aria-label="Rotate counter-clockwise">↺</button>
+      <button type="button" class="ctl" data-act="down" aria-label="Soft drop">▼</button>
+      <button type="button" class="ctl" data-act="cw" aria-label="Rotate clockwise">↻</button>
+      <button type="button" class="ctl" data-act="right" aria-label="Right">▶</button>
+      <button type="button" class="ctl ctl-wide" data-act="drop" aria-label="Hard drop">⤓</button>
+      <button type="button" class="ctl" data-act="hold" aria-label="Hold">⇄</button>
+    </div>
+
+    <p class="controls-hint muted small" data-i18n="controls_hint">← → 移动 · ↑ 旋转 · ↓ 软降 · 空格硬降 · C 暂存 · P 暂停</p>
+  </section>
+
+  <aside class="side">
+    <section class="panel" aria-labelledby="dex-title">
+      <h2 id="dex-title" data-i18n="dex">方块图鉴</h2>
+      <div class="dex" id="dex"></div>
+      <p class="muted small" id="dex-meta"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="ach-title">
+      <h2 id="ach-title" data-i18n="achievements">成就</h2>
+      <ul class="achievements" id="achievements"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="rec-title">
+      <h2 id="rec-title" data-i18n="records">纪录</h2>
+      <dl class="records" id="records">
+        <div><dt data-i18n="best_score">最高分</dt><dd id="rec-score">0</dd></div>
+        <div><dt data-i18n="best_lines">最多行数</dt><dd id="rec-lines">0</dd></div>
+        <div><dt data-i18n="daily_best">今日最佳</dt><dd id="rec-daily">0</dd></div>
+        <div><dt data-i18n="games">局数</dt><dd id="rec-games">0</dd></div>
+        <div><dt data-i18n="total_lines">累计行数</dt><dd id="rec-totlines">0</dd></div>
+        <div><dt data-i18n="total_score">累计得分</dt><dd id="rec-totscore">0</dd></div>
+      </dl>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot muted small">
+  <span data-i18n="footer">原创实现 · 玩法致敬经典下落消行类网页小游戏</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
