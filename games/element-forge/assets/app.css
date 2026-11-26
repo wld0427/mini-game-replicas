@@ -297,6 +297,15 @@ button { font: inherit; color: inherit; }
 
 .result-formula { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; overflow-wrap: anywhere; }
 
+/* 链式合成提示：告诉玩家产物卡可以点，点了就能接着熔炼 */
+.result-hint {
+  font-size: 0.74rem;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

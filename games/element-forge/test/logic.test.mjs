@@ -322,6 +322,82 @@ test('连续未出传说时触发保底', () => {
   assert.equal(next.daily.pity, 0, '保底后计数应清零');
 });
 
+/**
+ * 保底必须走真实抽取路径才能验证，不能直接把 pity 填成 12 再抽一次——
+ * 那样测的是「计数器有值时会怎样」，测不出「这个计数器能不能被攒到」。
+ *
+ * @covers F-008
+ */
+test('保底进度跨日累计：换日期抽取时 pity 不清零', () => {
+  let state = createState();
+  // 第一天抽满当天上限，全程只走真实路径（固定种子，结果可复现）
+  for (let i = 0; i < DAILY_LIMIT; i += 1) {
+    state = applyDailyDraw(state, '2026-11-01').state;
+  }
+  const pityAfterDay1 = state.daily.pity;
+  assert.equal(pityAfterDay1, DAILY_LIMIT, `第一天的 5 抽都未出传说，进度应为 5，实际 ${pityAfterDay1}`);
+
+  // 换到第二天：draws 归零，但 pity 必须保留（不跨日清零）
+  const { state: next, result } = applyDailyDraw(state, '2026-11-02');
+  assert.equal(next.daily.date, '2026-11-02');
+  assert.equal(next.daily.draws, 1, '新的一天从第 1 次开始重新计数');
+  assert.ok(
+    result.tier !== 'ssr' && result.tier !== 'ur',
+    `这次抽取出了传说 ${result.tier}，保底会被重置，本用例失去意义`,
+  );
+  assert.equal(
+    next.daily.pity,
+    pityAfterDay1 + 1,
+    `跨日抽取后 pity 应在原进度上继续累积，而不是清零（原 ${pityAfterDay1}，现 ${next.daily.pity}）`,
+  );
+});
+
+/**
+ * 保底可达性：只走真实抽取路径（跨多天连续抽），
+ * 断言「连续非传说抽取次数不超过阈值」且「保底确实触发过」。
+ *
+ * @covers F-008
+ */
+test('保底在真实抽取路径上可达：连续非传说抽取不超过阈值，且保底触发过', () => {
+  let state = createState();
+  let consecutiveNonLegendary = 0;
+  let maxConsecutive = 0;
+  let pityTriggered = 0;
+  let firstTrigger = null;
+
+  for (let day = 1; day <= 30; day += 1) {
+    const key = `2026-03-${String(day).padStart(2, '0')}`;
+    for (let i = 0; i < DAILY_LIMIT; i += 1) {
+      const pityBefore = state.daily.pity;
+      const { state: next, result } = applyDailyDraw(state, key);
+      state = next;
+      if (result.limited) break;
+      const legendary = result.tier === 'ssr' || result.tier === 'ur';
+      if (pityBefore >= DAILY_PITY_LIMIT) {
+        pityTriggered += 1;
+        if (!firstTrigger) firstTrigger = { day, draw: i + 1, tier: result.tier };
+        assert.ok(legendary, '保底触发的那一次必须给传说及以上');
+      }
+      if (legendary) {
+        consecutiveNonLegendary = 0;
+      } else {
+        consecutiveNonLegendary += 1;
+        maxConsecutive = Math.max(maxConsecutive, consecutiveNonLegendary);
+      }
+    }
+  }
+
+  assert.ok(
+    maxConsecutive <= DAILY_PITY_LIMIT,
+    `连续非传说抽取 ${maxConsecutive} 次不应超过阈值 ${DAILY_PITY_LIMIT}`,
+  );
+  assert.ok(
+    pityTriggered > 0,
+    '30 天真实抽取内保底一次都没触发，说明保底计数被别的地方清零了',
+  );
+  assert.ok(firstTrigger, '应记录到首次保底触发');
+});
+
 test('每日抽取日期变化后状态重置', () => {
   let state = createState();
   state = applyDailyDraw(state, '2026-01-01').state;

@@ -353,3 +353,158 @@ test('音效由 WebAudio 现场合成，且稀有档音阶更长', { skip: chrom
   const count = await page.evaluate(() => window.__oscCount);
   assert.ok(count >= 1, `熔炼应创建振荡器节点，实际 ${count}`);
 });
+
+/**
+ * 拖拽入槽：把图鉴里的元素拖进熔炉槽位。
+ * 早期版本只写了 dragstart / drop 监听，却没给 chip 设 draggable，
+ * <button> 默认不可拖，于是这条入口整个是死代码。
+ *
+ * @covers F-014
+ */
+test('拖拽入槽：把图鉴元素拖进熔炉槽位', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  // 前置：chip 必须真的可拖
+  const draggable = await page.getAttribute('#collection .chip[data-element="water"]', 'draggable');
+  assert.equal(draggable, 'true', '图鉴芯片必须显式标记为可拖');
+
+  // 拖到 A 槽
+  await page.dragAndDrop('#collection .chip[data-element="water"]', '#slot-a');
+  await page.waitForFunction(
+    () => document.getElementById('slot-a-name').textContent.trim() === '水',
+    null,
+    { timeout: 5000 },
+  ).catch(async () => {
+    assert.fail('拖拽后 A 槽应显示「水」');
+  });
+
+  // 拖到 B 槽
+  await page.dragAndDrop('#collection .chip[data-element="fire"]', '#slot-b');
+  await page.waitForFunction(
+    () => document.getElementById('slot-b-name').textContent.trim() === '火',
+    null,
+    { timeout: 5000 },
+  ).catch(async () => {
+    assert.fail('拖拽后 B 槽应显示「火」');
+  });
+
+  assert.equal(await page.isDisabled('#fuse-btn'), false, '拖满两个槽位后熔炼按钮应可用');
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * 搜索要能查到「还没发现」的元素：
+ * 玩家需要确认某个词到底存不存在，否则搜到了却回「没有匹配」，图鉴查询就是死路。
+ *
+ * @covers F-018
+ */
+test('搜索能查到未发现的元素，并标出未发现项', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  // 「化石」是真实存在的词条，开局一定没收集到
+  await page.fill('#search', '化石');
+  await page.waitForSelector('#collection .chip');
+
+  const matches = await page.locator('#collection .chip').count();
+  assert.equal(matches, 1, `「化石」应命中 1 个词条，实际 ${matches}`);
+  assert.equal(
+    await page.locator('#collection .chip').first().getAttribute('data-element'),
+    'fossil',
+    '命中的应是化石词条',
+  );
+  assert.equal(
+    await page.locator('#collection .chip.is-locked').count(),
+    1,
+    '未发现的词条应以锁定态呈现',
+  );
+  assert.equal(
+    await page.locator('#collection .collection-empty').count(),
+    0,
+    '元素存在时不应回「没有匹配」',
+  );
+
+  const meta = (await page.textContent('#collection-meta')).trim();
+  assert.ok(meta.includes('1'), `搜索态说明应报命中数，实际：${meta}`);
+  assert.ok(meta.includes('未发现'), `搜索态说明应指出有未发现项，实际：${meta}`);
+
+  // 完全不存在的关键词才提示「没有匹配」
+  await page.fill('#search', 'zzzz-not-exist');
+  await page.waitForSelector('#collection .collection-empty');
+  const emptyText = (await page.textContent('#collection .collection-empty')).trim();
+  assert.ok(emptyText.includes('没有匹配'), `不存在时才提示没有匹配，实际：${emptyText}`);
+
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * 产物卡链式合成：点产物把它装回熔炉，且必须给出可见提示。
+ *
+ * @covers F-019
+ */
+test('产物卡可点击继续熔炼，并显示链式提示', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  await page.click('#collection .chip[data-element="water"]');
+  await page.click('#collection .chip[data-element="fire"]');
+  await page.click('#fuse-btn');
+  await page.waitForSelector('#result-card:not([hidden])');
+
+  const hint = (await page.textContent('#result-hint')).trim();
+  assert.ok(hint.length > 0, '产物卡必须显示链式合成提示');
+  assert.ok(hint.includes('继续熔炼'), `提示文案应说明可继续熔炼，实际：${hint}`);
+
+  // 点产物卡 → 蒸汽装回熔炉（两个槽位已满时替换为 A 槽）
+  await page.click('#result-card');
+  await page.waitForFunction(
+    () => document.getElementById('slot-a-name').textContent.trim() === '蒸汽',
+    null,
+    { timeout: 5000 },
+  ).catch(async () => {
+    assert.fail('点产物后应把产物装回熔炉');
+  });
+  assert.equal((await page.textContent('#slot-b-name')).trim(), '空', '装回后另一槽应腾空');
+
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});

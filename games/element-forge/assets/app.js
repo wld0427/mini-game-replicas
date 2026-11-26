@@ -43,6 +43,7 @@ const dom = {
   resultNew: el('result-new'),
   resultImprov: el('result-improv'),
   resultFormula: el('result-formula'),
+  resultHint: el('result-hint'),
   statDex: el('stat-dex'),
   statFusions: el('stat-fusions'),
   statDepth: el('stat-depth'),
@@ -290,6 +291,10 @@ function renderResult() {
   dom.resultCard.classList.remove('is-fresh');
   void dom.resultCard.offsetWidth;
   dom.resultCard.classList.add('is-fresh', 'is-clickable');
+  // 链式合成提示：产物卡可点击继续熔炼，这句提示必须露出来，
+  // 否则功能存在但玩家不知道，chain_hint 就是一句没人看得见的死文案。
+  /** @feature F-019 产物卡链式合成提示可见 */
+  dom.resultHint.textContent = s.chain_hint;
 }
 
 function renderStats() {
@@ -311,7 +316,10 @@ function renderCollection() {
   for (const element of canonical) {
     const owned = state.collection[element.id];
     if (q) {
-      if (!owned) continue;
+      // 搜索能查到「还没发现」的词条：玩家需要能确认「这个元素到底存不存在」。
+      // 若只搜已收集的，搜到一个真实存在但未发现的元素会回「没有匹配」，
+      // 等于把图鉴查询做成死路。未发现的仍以 ? 展示，不剧透名字。
+      /** @feature F-018 搜索可查到未发现的词条（以锁定态呈现） */
       const name = describeElement(element.id, state, lang).name.toLowerCase();
       if (!name.includes(q)) continue;
     }
@@ -323,6 +331,9 @@ function renderCollection() {
     chip.dataset.tier = element.tier;
     chip.style.setProperty('--tier', `var(--tier-${element.tier})`);
     chip.disabled = !owned;
+    // <button> 默认不可拖，必须显式打开拖拽，否则 dragstart 永不触发，拖拽入槽是死代码
+    /** @feature F-014 拖拽入槽：芯片必须显式可拖 */
+    chip.draggable = Boolean(owned);
     const glyph = document.createElement('span');
     glyph.className = 'chip-glyph';
     glyph.textContent = owned ? element.glyph : '?';
@@ -356,6 +367,7 @@ function renderCollection() {
     chip.dataset.element = id;
     chip.dataset.tier = info.tier;
     chip.style.setProperty('--tier', `var(--tier-${info.tier})`);
+    chip.draggable = true;
     const glyph = document.createElement('span');
     glyph.className = 'chip-glyph';
     glyph.textContent = info.glyph;
@@ -381,7 +393,13 @@ function renderCollection() {
   }
 
   const stats = computeStats(state);
-  dom.collectionMeta.textContent = `${stats.distinct}/${Object.keys(ELEMENTS).length} · ${s.stat_fusions} ${stats.fusions}`;
+  if (q) {
+    // 搜索态：报「命中几项 / 其中几项还没发现」，让「元素存在但没收集到」不再被误读成「不存在」
+    const locked = dom.collection.querySelectorAll('.chip.is-locked').length;
+    dom.collectionMeta.textContent = s.search_meta.replace('{n}', String(shown)).replace('{locked}', String(locked));
+  } else {
+    dom.collectionMeta.textContent = `${stats.distinct}/${Object.keys(ELEMENTS).length} · ${s.stat_fusions} ${stats.fusions}`;
+  }
 }
 
 function renderDaily() {

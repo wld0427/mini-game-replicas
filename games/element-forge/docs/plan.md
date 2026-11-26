@@ -16,7 +16,7 @@
 
 ### 阶段 1：文档地基
 
-**做什么**：按 `docs/process/` 模板写三份文档，把 17 项功能清单定下来。
+**做什么**：按 `docs/process/` 模板写三份文档，把 19 项功能清单定下来。
 
 **产出文件**：`games/element-forge/docs/proposal.md`、`design.md`、`plan.md`
 
@@ -34,7 +34,7 @@ node scripts/design-review.mjs games/element-forge
 ✓ 设计评审全部通过。
 ```
 
-**完成标准**：设计评审退出码 0，且 `design.md` 的功能清单能被 `scripts/feature-trace.mjs` 解析出 17 个 F-ID。
+**完成标准**：设计评审退出码 0，且 `design.md` 的功能清单能被 `scripts/feature-trace.mjs` 解析出 19 个 F-ID。
 
 ---
 
@@ -46,7 +46,11 @@ node scripts/design-review.mjs games/element-forge
 2. 做 F-010：配方手册条目可点击，一键把原料装回槽位。
 3. 修 F-016：搜索无匹配与图鉴为空用不同提示。
 4. 补 F-003/F-004/F-005/F-006/F-009 的**行为断言**（这五个逻辑函数此前零覆盖）。
-5. 给 17 项功能在代码里加 `@feature` 标记、在测试里加 `@covers` 标记。
+5. 给 19 项功能在代码里加 `@feature` 标记、在测试里加 `@covers` 标记。
+6. 门禁之外再自审一轮：核验另一会话审计报告（`docs/audit/element-forge.md`）指出的功能空洞，
+   逐条修掉——每日保底跨日累计（否则永远攒不到阈值）、芯片显式可拖（否则拖拽是死代码）、
+   产物卡补链式合成提示、搜索能查到未发现词条。
+   **关键约束：断言必须走玩家真正会走的路径**，不许把状态伪造出来再断言。
 
 **产出文件**：`games/element-forge/assets/app.js`、`src/logic.js`、`test/logic.test.mjs`、`test/smoke.test.mjs`
 
@@ -61,8 +65,8 @@ node scripts/feature-trace.mjs games/element-forge
 **期望输出**：
 
 ```
-# tests 50
-# pass 50
+# tests 55
+# pass 55
 # fail 0
 
 ✓ 静态审查通过：检查了 1 个项目，未发现问题。
@@ -70,7 +74,7 @@ node scripts/feature-trace.mjs games/element-forge
 ✓ 功能追溯矩阵完整：无缺失实现、无缺失测试、无缺失验收、无孤儿实现。
 ```
 
-**完成标准**：三条命令全部退出码 0；功能追溯矩阵 17 项全部 ✅。
+**完成标准**：三条命令全部退出码 0；功能追溯矩阵 19 项全部 ✅。
 
 ---
 

@@ -526,7 +526,10 @@ export function applyDailyDraw(state, dateKey) {
   };
 
   if (next.daily.date !== dateKey) {
-    next.daily = { date: dateKey, draws: 0, pity: 0, lastId: null };
+    // 保底计数跨日累计：跨天只清「今日已抽次数」，保底进度必须保留。
+    // 每日上限 DAILY_LIMIT(5) 小于保底阈值 DAILY_PITY_LIMIT(12)，
+    // 若连同 pity 一起清零，保底就永远触发不了，等于把这条功能做成死代码。
+    next.daily = { date: dateKey, draws: 0, pity: next.daily.pity || 0, lastId: null };
   }
 
   if (next.daily.draws >= DAILY_LIMIT) {
