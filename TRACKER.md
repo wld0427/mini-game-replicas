@@ -12,7 +12,7 @@
 | # | 游戏 | 上游参考 | 玩法内核 | 目录 | 单元测试 | 冒烟测试 | 静态审查 | 四道门禁 | 部署 URL | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | ✅ 已过 | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
-| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底（跨日累计） | `games/element-forge/` | ✅ 46/46 | ✅ 9/9 | ✅ | ✅ 已过 | https://glihx7ovioszc.space.mcode.cn | 已交付 |
+| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底（跨日累计） | `games/element-forge/` | ✅ 46/46 | ✅ 9/9 | ✅ | ✅ 已过 | https://zr6vv3h2bn8e3.space.mcode.cn | 已交付 |
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
@@ -83,7 +83,7 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 | 游戏 | 公网地址 | 部署时间 |
 | --- | --- | --- |
 | Kanji Rush | https://fe84dtppzvcch.space.mcode.cn | 2026-11-25 |
-| Element Forge | https://glihx7ovioszc.space.mcode.cn | 2026-11-26（门禁修复后重新部署；旧地址 https://h3insrj3ydjpe.space.mcode.cn 仍是首版） |
+| Element Forge | https://zr6vv3h2bn8e3.space.mcode.cn | 2026-11-26（门禁修复 + 审计空洞修复后重新部署；前一版 https://glihx7ovioszc.space.mcode.cn，首版 https://h3insrj3ydjpe.space.mcode.cn） |
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
 | Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
 | Ball Foundry | https://rhgu3kwxcpak6.space.mcode.cn | 2026-11-25 |
