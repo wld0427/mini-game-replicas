@@ -12,6 +12,7 @@
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
+| 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 39/39 | ✅ 3/3 | ✅ | https://5bqw3wzkboaey.space.mcode.cn | 已交付 |
 
 ## 已部署
 
@@ -22,6 +23,7 @@
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
 | Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
 | Ball Foundry | https://rhgu3kwxcpak6.space.mcode.cn | 2026-11-25 |
+| Townscript 城痕 | https://5bqw3wzkboaey.space.mcode.cn | 2026-11-26 |
 
 ## GitHub 同步状态
 
@@ -36,6 +38,12 @@
 - 2026-11-25 实测：另一会话先推了 5 个提交（CI / push-retry / TRACKER），本轮首次推送被
   non-fast-forward 拒绝；`git fetch origin main && git rebase origin/main` 干净合并后，
   `sync-github.sh` 第 3 次尝试推送成功。**每轮开工先 fetch + rebase**，别等推送失败再补。
+- ⚠️ 2026-11-26 记录：定时任务曾被平台因 **Token Plan 用量触顶**自动置为
+  `paused_after_failures`（错误码 2067）。恢复办法：补充额度/升级套餐后重新启用任务。
+  任务频率已按用户要求从每 30 分钟改为 **每 2 小时**（`0 */2 * * *`），token 消耗降为 1/4。
+- ⚠️ `git fetch` 和 `git push` 一样会因 TLS 中断失败，**fetch 也必须重试**
+  （实测第 3 次才成功）。`sync-github.sh` 里的 fetch 目前只试 1 次，
+  遇到失败会跳过 rebase 直接 push —— 有分叉风险，后续可改为复用 `push-retry.sh` 的退避逻辑。
 
 ## CI 状态
 
@@ -52,7 +60,6 @@
 
 | 候选 | 上游 | 玩法内核 | 备注 |
 | --- | --- | --- | --- |
-| 城市生成器 | Townscaper 式 | 点格子长出房子/桥/路 | 图形程序化生成 |
 | 元素周期表配对 | 常见记忆游戏 | 元素符号配对翻牌 | 简单，但可加入倒计时 |
 | 像素画画板 | doodle 类 | 画笔/橡皮/调色板 + 导出 PNG | |
 | 星球折叠 | fold 类 | 折纸网格判定覆盖 | 算法可测 |

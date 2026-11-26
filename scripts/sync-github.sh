@@ -81,6 +81,8 @@ fi
 # ── 4. 同步远端 ──────────────────────────────────────
 # 定时任务在独立工作区执行，多个会话可能并发推同一个分支。
 # 直接 push 会被 remote rejected（非快进），所以先 fetch + rebase。
+# fetch 和 push 一样会因共享出口的 TLS 中断而失败，必须重试。
+# 只试 1 次会导致拿不到远端最新状态，进而在推送时撞上 non-fast-forward 分叉。
 log "→ 同步远端历史…"
 git remote remove origin 2>/dev/null || true
 git remote add origin "https://github.com/${OWNER}/${REPO}.git"
@@ -89,11 +91,17 @@ basic="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
 # 让 fetch 也能带凭证（否则 git 会卡在交互式输入用户名）
 git config "http.https://github.com/.extraheader" "AUTHORIZATION: basic ${basic}"
 
-if git fetch --quiet origin "$BRANCH" 2>/tmp/_gh_fetch.err; then
-  log "  远端已获取"
-else
-  log "  ⚠️ fetch 失败（继续尝试推送）：$(tail -n 1 /tmp/_gh_fetch.err)"
-fi
+fetch_ok=0
+for attempt in 1 2 3 4 5; do
+  if git fetch --quiet origin "$BRANCH" 2>/tmp/_gh_fetch.err; then
+    fetch_ok=1
+    log "  远端已获取（第 ${attempt} 次尝试）"
+    break
+  fi
+  log "  fetch 第 ${attempt} 次失败：$(tail -n 1 /tmp/_gh_fetch.err | cut -c1-70)"
+  sleep $((attempt * 4))
+done
+[ "$fetch_ok" = "1" ] || log "  ⚠️ fetch 全部尝试失败（继续尝试推送，推送可能因分叉被拒）"
 
 if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
   if ! git merge-base --is-ancestor "origin/${BRANCH}" HEAD 2>/dev/null; then
@@ -106,7 +114,6 @@ if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
     fi
   fi
 fi
-
 # ── 5. 推送 ──────────────────────────────────────────
 log "→ 推送到 origin…"
 if bash "$(dirname "${BASH_SOURCE[0]}")/push-retry.sh" "$BRANCH"; then
