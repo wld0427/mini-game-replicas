@@ -112,6 +112,7 @@ function tone(freq, duration, type = 'sine', gain = 0.08, delay = 0) {
   osc.stop(ctx.currentTime + delay + duration + 0.02);
 }
 
+/** @feature F-011 */
 function playPullSound(tierId) {
   if (tierId === 'ur' || tierId === 'ssr') {
     const notes = tierId === 'ur' ? [523, 659, 784, 1047] : [523, 659, 784];
@@ -180,6 +181,7 @@ function renderStats() {
   dom.statTempo.textContent = `${stats.delay}ms`;
 }
 
+/** @feature F-009 */
 function renderCollection() {
   const s = getStrings(lang);
   dom.collection.innerHTML = '';
@@ -303,6 +305,7 @@ function scheduleAuto() {
 
 let autoOn = false;
 
+/** @feature F-010 */
 function setAuto(on) {
   autoOn = on;
   dom.autoBtn.setAttribute('aria-pressed', String(on));
@@ -352,6 +355,7 @@ dom.langSwitch.addEventListener('click', (event) => {
   renderAll();
 });
 
+/** @feature F-010 键盘：空格抽取、A 切换自动 */
 document.addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.code === 'Space') {

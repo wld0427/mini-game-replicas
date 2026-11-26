@@ -2,17 +2,44 @@
 
 > 本文件由定时任务自动维护。每轮任务结束后必须更新对应条目。
 > 状态取值：`待办` / `开发中` / `待验收` / `已交付`
+>
+> **2026-11-26 起实行四道强制门禁**（流程见 `docs/process/README.md`）：
+> 立项评审 → 设计文档+开发计划 → 实现与代码审查 → 交付验收。
+> **当前游戏没过 `node scripts/gate.mjs`，绝不允许开始下一款。**
 
 ## 项目清单
 
-| # | 游戏 | 上游参考 | 玩法内核 | 目录 | 单元测试 | 冒烟测试 | 静态审查 | 部署 URL | 状态 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
-| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
-| 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
-| 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
-| 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
-| 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 39/39 | ✅ 3/3 | ✅ | https://5bqw3wzkboaey.space.mcode.cn | 已交付 |
+| # | 游戏 | 上游参考 | 玩法内核 | 目录 | 单元测试 | 冒烟测试 | 静态审查 | 四道门禁 | 部署 URL | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | ✅ 已过 | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
+| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
+| 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
+| 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
+| 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
+| 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://5bqw3wzkboaey.space.mcode.cn | 已交付 |
+
+## 门禁待修复清单（2026-11-26 起）
+
+存量 6 款均在**无立项评审、无设计文档、无功能清单**的条件下产出，已被指出
+「核心玩法功能错漏、功能不完善、表现粗糙」。按新门禁逐款修复，**一款一款来，
+过完门禁才开下一款**。
+
+| 游戏 | 缺失的文档 | 已知待查问题 | 门禁 |
+| --- | --- | --- | --- |
+| kanji-rush | ✅ 已补齐（proposal/design/plan/acceptance） | 已补：F-011 音效无测试、图鉴格子数无断言、自动模式无测试；已修 toast 遮挡统计栏与移动端语言按钮断字 | ✅ 已过 |
+| element-forge | ❌ 全缺 | 待审计：合成表覆盖度、保底是否生效、图鉴与每日灵感 | ⏳ 待修复 |
+| angler-almanac | ❌ 全缺 | 待审计：多阶段交互链（抛竿→咬钩→起竿→遛鱼）每一环是否真的走得通、有无卡死路径 | ⏳ 待修复 |
+| tetra-cascade | ❌ 全缺 | 待审计：踢墙表是否完整、锁定延迟续命次数、暂存交换限制、7-bag 表述是否与实现一致 | ⏳ 待修复 |
+| ball-foundry | ❌ 全缺 | 待审计：7 种材质手感是否真的可区分、堆叠结算、升级曲线 | ⏳ 待修复 |
+| townscript | ❌ 全缺 | 待审计：10 种地标约束是否全部可达、右键拆除、城镇代码往返 | ⏳ 待修复 |
+
+修复流程（每款一套）：
+1. `docs/proposal.md` — 立项评审：这一版补齐什么、凭什么值得留
+2. `docs/design.md` — 功能清单 `F-xxx` + 状态机 + 边界 + 打磨清单
+3. `docs/plan.md` — ≥3 个带验收命令的阶段
+4. 代码补 `@feature` 标记、测试补 `@covers` 标记，**补真实缺失功能**
+5. `docs/acceptance.md` — 逐条验收 + 桌面/移动截图人工核对
+6. `node scripts/gate.mjs games/<slug>` 必须全绿
 
 ## 已部署
 

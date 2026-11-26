@@ -1,15 +1,18 @@
 {
   "name": "mini-game-replicas",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "有意思的网页小游戏复刻合集：每款都是独立可运行的原创实现，附带单测与浏览器冒烟测试",
+  "description": "有意思的网页小游戏复刻合集：每款都是独立可运行的原创实现，走立项评审→设计→实现→验收四道门禁",
   "type": "module",
   "scripts": {
     "test": "node scripts/run-tests.mjs",
     "review": "node scripts/review.mjs",
-    "check": "node scripts/review.mjs && node scripts/run-tests.mjs"
+    "design-review": "node scripts/design-review.mjs",
+    "trace": "node scripts/feature-trace.mjs",
+    "gate": "node scripts/gate.mjs",
+    "check": "node scripts/gate.mjs"
   },
-  "keywords": ["mini-game", "web-game", "replica", "html5", "javascript"],
+  "keywords": ["mini-game", "web-game", "replica", "html5", "javascript", "quality-gate"],
   "license": "MIT",
   "engines": {
     "node": ">=20"

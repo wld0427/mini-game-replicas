@@ -34,6 +34,7 @@ function seeded(seed = 1) {
   };
 }
 
+/** @covers F-001 */
 test('字库结构合法：id 唯一、字段齐全、freq 在 0-100', () => {
   const ids = new Set();
   for (const k of KANJI) {
@@ -48,6 +49,7 @@ test('字库结构合法：id 唯一、字段齐全、freq 在 0-100', () => {
   assert.ok(KANJI.length >= 100, `字库过小: ${KANJI.length}`);
 });
 
+/** @covers F-001 */
 test('每个稀有度档位都有可抽取的字', () => {
   for (const id of TIER_IDS) {
     const pool = poolFor(KANJI, id);
@@ -55,6 +57,7 @@ test('每个稀有度档位都有可抽取的字', () => {
   }
 });
 
+/** @covers F-001 */
 test('tierOf 依据 freq 分档，边界值归入正确档位', () => {
   assert.equal(tierOf({ freq: 0 }), 'n');
   assert.equal(tierOf({ freq: 34 }), 'n');
@@ -68,6 +71,7 @@ test('tierOf 依据 freq 分档，边界值归入正确档位', () => {
   assert.equal(tierOf({ freq: 100 }), 'ur');
 });
 
+/** @covers F-002 */
 test('pickTierByWeight 服从权重分布（3000 次采样，容差内）', () => {
   const rng = seeded(42);
   const counts = { n: 0, r: 0, sr: 0, ssr: 0, ur: 0 };
@@ -84,6 +88,7 @@ test('pickTierByWeight 服从权重分布（3000 次采样，容差内）', () =
   assert.ok(counts.ur > 0, '神话档应至少出现一次');
 });
 
+/** @covers F-003 */
 test('applyPull 递增计数并记录收藏', () => {
   const rng = seeded(7);
   let state = createState();
@@ -97,6 +102,7 @@ test('applyPull 递增计数并记录收藏', () => {
   assert.equal(state.pulls, 0, '入参 state 不应被修改');
 });
 
+/** @covers F-003 */
 test('重复抽到同字时 isNew 为 false 且数量递增', () => {
   const rng = seeded(11);
   let state = createState();
@@ -113,6 +119,7 @@ test('重复抽到同字时 isNew 为 false 且数量递增', () => {
   assert.ok(state.collection[target] >= 1);
 });
 
+/** @covers F-005 */
 test('连击：史诗及以上累加，普通/稀有清零', () => {
   const rng = seeded(2024);
   let state = createState();
@@ -138,6 +145,7 @@ test('连击：史诗及以上累加，普通/稀有清零', () => {
   assert.ok(state.bestCombo >= 1);
 });
 
+/** @covers F-004 */
 test('保底：连续 PITY_LIMIT 次未出传说则强制触发，且计数归零', () => {
   const rng = seeded(99);
   let state = createState();
@@ -150,6 +158,7 @@ test('保底：连续 PITY_LIMIT 次未出传说则强制触发，且计数归�
   assert.equal(out.state.pityBreaks, 1);
 });
 
+/** @covers F-004 */
 test('保底计数：未出传说时递增，出传说时归零', () => {
   const rng = seeded(123);
   let state = createState();
@@ -164,6 +173,7 @@ test('保底计数：未出传说时递增，出传说时归零', () => {
   }
 });
 
+/** @covers F-006 */
 test('tempoDelay 随抽卡数单调不增，且不低于下限', () => {
   let prev = Infinity;
   for (let p = 0; p < 400; p += 1) {
@@ -176,12 +186,14 @@ test('tempoDelay 随抽卡数单调不增，且不低于下限', () => {
   assert.equal(tempoDelay(-5), TEMPO.base);
 });
 
+/** @covers F-006 */
 test('currentDelay 在传奇加速期内为 8 折', () => {
   const base = tempoDelay(10);
   assert.equal(currentDelay({ pulls: 10, surge: 0 }), base);
   assert.equal(currentDelay({ pulls: 10, surge: 3 }), Math.round(base * 0.8));
 });
 
+/** @covers F-007 */
 test('成就按条件解锁且不重复解锁', () => {
   let state = createState();
   const rng = seeded(5);
@@ -198,6 +210,7 @@ test('成就按条件解锁且不重复解锁', () => {
   assert.ok(state.achievements.first_pull === true);
 });
 
+/** @covers F-007 */
 test('成就表中的每一条都有可执行的判定函数', () => {
   const state = createState();
   for (const ach of ACHIEVEMENTS) {
@@ -206,6 +219,7 @@ test('成就表中的每一条都有可执行的判定函数', () => {
   }
 });
 
+/** @covers F-007 */
 test('updateAchievements 返回新解锁成就且状态被记录', () => {
   const state = { ...createState(), pulls: 1 };
   const unlocked = updateAchievements(state, KANJI);
@@ -214,6 +228,7 @@ test('updateAchievements 返回新解锁成就且状态被记录', () => {
   assert.equal(updateAchievements(state, KANJI).length, 0);
 });
 
+/** @covers F-003 */
 test('收集度统计正确', () => {
   const rng = seeded(31);
   let state = createState();
@@ -224,6 +239,7 @@ test('收集度统计正确', () => {
   assert.ok(ownedN >= 0 && ownedN <= nPool.length);
 });
 
+/** @covers F-003 */
 test('computeStats 输出完整字段', () => {
   const stats = computeStats(createState());
   assert.equal(stats.pulls, 0);
@@ -232,6 +248,7 @@ test('computeStats 输出完整字段', () => {
   assert.deepEqual(Object.keys(stats.tiers).sort(), [...TIER_IDS].sort());
 });
 
+/** @covers F-003 */
 test('最近抽取日志最多保留 30 条', () => {
   const rng = seeded(77);
   let state = createState();
@@ -239,6 +256,7 @@ test('最近抽取日志最多保留 30 条', () => {
   assert.equal(state.log.length, 30);
 });
 
+/** @covers F-008 */
 test('序列化 / 反序列化可完整往返', () => {
   const rng = seeded(64);
   let state = createState();
@@ -251,6 +269,7 @@ test('序列化 / 反序列化可完整往返', () => {
   assert.deepEqual({ ...restored.achievements }, { ...state.achievements });
 });
 
+/** @covers F-008 */
 test('反序列化面对脏数据不崩溃并回退为安全默认值', () => {
   assert.deepEqual(deserializeState(null).pulls, 0);
   assert.deepEqual(deserializeState('not-json').pulls, 0);

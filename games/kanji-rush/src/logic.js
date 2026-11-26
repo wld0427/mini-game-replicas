@@ -64,6 +64,8 @@ export function createState() {
  * 按生僻度百分位判定稀有度。
  * @param {{freq: number}} kanji
  * @returns {string} tier id
+  *
+ * @feature F-001
  */
 export function tierOf(kanji) {
   let result = 'n';
@@ -86,6 +88,8 @@ export function poolFor(kanjiPool, tierId) {
  * 按权重抽取稀有度。
  * @param {() => number} rng 返回 [0,1) 的随机源
  * @returns {string} tier id
+  *
+ * @feature F-002
  */
 export function pickTierByWeight(rng) {
   const total = TIER_LIST.reduce((sum, t) => sum + t.weight, 0);
@@ -100,6 +104,8 @@ export function pickTierByWeight(rng) {
 /**
  * 根据总抽卡数计算自动抽取间隔（毫秒）。单调递减，下限 TEMPO.min。
  * @param {number} pulls
+  *
+ * @feature F-006
  */
 export function tempoDelay(pulls) {
   const safe = Math.max(0, Math.floor(pulls));
@@ -140,8 +146,11 @@ export function distinctInTier(state, kanjiPool, tierId) {
  * @param {Array<{id: string, freq: number}>} kanjiPool
  * @param {() => number} rng
  * @returns {{state: GameState, result: object}}
+  *
+ * @feature F-003
  */
 export function applyPull(state, kanjiPool, rng = Math.random) {
+  /** @feature F-004 保底：连续未出传说达到阈值时强制传说 */
   const pityTriggered = state.pity >= PITY_LIMIT;
   const tierId = pityTriggered ? 'ssr' : pickTierByWeight(rng);
 
@@ -166,6 +175,7 @@ export function applyPull(state, kanjiPool, rng = Math.random) {
   next.collection[kanji.id] = (next.collection[kanji.id] || 0) + 1;
   next.tierCounts[tierId] += 1;
 
+  /** @feature F-005 连击：史诗及以上累加，普通/稀有清零 */
   const tierRank = TIER_IDS.indexOf(tierId);
   if (tierRank >= 2) {
     next.combo += 1;
@@ -212,6 +222,8 @@ export const ACHIEVEMENTS = [
  * 检查并解锁成就，返回本次新解锁的成就列表。
  * @param {GameState} state 会被就地更新的状态对象
  * @param {Array<{id: string, freq: number}>} kanjiPool
+  *
+ * @feature F-007
  */
 export function updateAchievements(state, kanjiPool) {
   const unlocked = [];
@@ -245,6 +257,8 @@ export function computeStats(state) {
 /**
  * 把状态安全地序列化到 localStorage。遇到脏数据不会抛异常。
  * @param {GameState} state
+  *
+ * @feature F-008
  */
 export function serializeState(state) {
   return JSON.stringify({
