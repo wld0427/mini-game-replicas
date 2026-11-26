@@ -38,27 +38,26 @@
 </header>
 
 <main class="layout">
-  <section class="forge-wrap" id="forge" aria-labelledby="forge-title">
+  <div class="forge" id="forge" aria-labelledby="forge-title">
     <h2 class="visually-hidden" id="forge-title">Forge</h2>
 
-    <div class="forge">
-      <div class="slots">
-        <button type="button" class="slot" id="slot-a" data-slot="0" aria-describedby="hint">
-          <span class="slot-label" data-i18n="slot_a">原料 A</span>
-          <span class="slot-glyph" id="slot-a-glyph" aria-hidden="true">+</span>
-          <span class="slot-name" id="slot-a-name">空</span>
-          <span class="slot-tier" id="slot-a-tier"></span>
-        </button>
+    <div class="slots">
+      <button type="button" class="slot" id="slot-a" data-slot="0" aria-describedby="hint">
+        <span class="slot-label" data-i18n="slot_a">原料 A</span>
+        <span class="slot-glyph" id="slot-a-glyph" aria-hidden="true">+</span>
+        <span class="slot-name" id="slot-a-name">空</span>
+        <span class="slot-tier" id="slot-a-tier"></span>
+      </button>
 
-        <span class="plus" aria-hidden="true">+</span>
+      <span class="plus" aria-hidden="true">+</span>
 
-        <button type="button" class="slot" id="slot-b" data-slot="1" aria-describedby="hint">
-          <span class="slot-label" data-i18n="slot_b">原料 B</span>
-          <span class="slot-glyph" id="slot-b-glyph" aria-hidden="true">+</span>
-          <span class="slot-name" id="slot-b-name">空</span>
-          <span class="slot-tier" id="slot-b-tier"></span>
-        </button>
-      </div>
+      <button type="button" class="slot" id="slot-b" data-slot="1" aria-describedby="hint">
+        <span class="slot-label" data-i18n="slot_b">原料 B</span>
+        <span class="slot-glyph" id="slot-b-glyph" aria-hidden="true">+</span>
+        <span class="slot-name" id="slot-b-name">空</span>
+        <span class="slot-tier" id="slot-b-tier"></span>
+      </button>
+    </div>
 
       <div class="fuse-row">
         <button type="button" id="fuse-btn" class="fuse-btn" data-i18n="fuse">熔炼</button>
@@ -90,38 +89,35 @@
       </dl>
 
       <div class="tier-legend" id="tier-legend"></div>
-    </div>
+  </div>
+
+  <section class="panel panel-collection" aria-labelledby="collection-title">
+    <h2 id="collection-title" data-i18n="collection">图鉴</h2>
+    <input type="search" id="search" class="search" placeholder="搜索元素…" data-i18n-attr="placeholder:search_placeholder" aria-label="Search elements">
+    <div class="collection" id="collection"></div>
+    <p class="muted small" id="collection-meta"></p>
   </section>
 
-  <aside class="side">
-    <section class="panel" aria-labelledby="collection-title">
-      <h2 id="collection-title" data-i18n="collection">图鉴</h2>
-      <input type="search" id="search" class="search" placeholder="搜索元素…" data-i18n-attr="placeholder:search_placeholder" aria-label="Search elements">
-      <div class="collection" id="collection"></div>
-      <p class="muted small" id="collection-meta"></p>
-    </section>
+  <section class="panel panel-daily" aria-labelledby="daily-title">
+    <h2 id="daily-title" data-i18n="daily">每日灵感</h2>
+    <button type="button" id="daily-btn" class="daily-btn" data-i18n="daily_draw">抽取灵感</button>
+    <dl class="mini-stats">
+      <div><dt data-i18n="daily_left">今日剩余</dt><dd id="daily-left">0</dd></div>
+      <div><dt data-i18n="pity">保底</dt><dd id="daily-pity">0/12</dd></div>
+    </dl>
+    <p class="muted small" id="daily-hint"></p>
+  </section>
 
-    <section class="panel" aria-labelledby="daily-title">
-      <h2 id="daily-title" data-i18n="daily">每日灵感</h2>
-      <button type="button" id="daily-btn" class="daily-btn" data-i18n="daily_draw">抽取灵感</button>
-      <dl class="mini-stats">
-        <div><dt data-i18n="daily_left">今日剩余</dt><dd id="daily-left">0</dd></div>
-        <div><dt data-i18n="pity">保底</dt><dd id="daily-pity">0/12</dd></div>
-      </dl>
-      <p class="muted small" id="daily-hint"></p>
-    </section>
+  <section class="panel panel-ach" aria-labelledby="ach-title">
+    <h2 id="ach-title" data-i18n="achievements">成就</h2>
+    <ul class="achievements" id="achievements"></ul>
+  </section>
 
-    <section class="panel" aria-labelledby="ach-title">
-      <h2 id="ach-title" data-i18n="achievements">成就</h2>
-      <ul class="achievements" id="achievements"></ul>
-    </section>
-
-    <section class="panel" aria-labelledby="recipe-title">
-      <h2 id="recipe-title" data-i18n="recipes">配方手册</h2>
-      <ul class="recipes" id="recipes"></ul>
-      <p class="muted small" id="recipes-empty" data-i18n="recipes_empty">熔炼成功后配方会记录在这里</p>
-    </section>
-  </aside>
+  <section class="panel panel-recipes" aria-labelledby="recipe-title">
+    <h2 id="recipe-title" data-i18n="recipes">配方手册</h2>
+    <ul class="recipes" id="recipes"></ul>
+    <p class="muted small" id="recipes-empty" data-i18n="recipes_empty">熔炼成功后配方会记录在这里</p>
+  </section>
 </main>
 
 <footer class="foot muted small">

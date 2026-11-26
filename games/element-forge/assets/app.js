@@ -165,6 +165,9 @@ function playSelectSound() {
   tone(660, 0.07, 'sine', 0.05);
 }
 
+/**
+ * @feature F-017 音效反馈：WebAudio 现场合成，按稀有度分音阶
+ */
 function playFuseSound(tier) {
   noiseBurst(0.34, 0.14);
   tone(110, 0.3, 'sine', 0.1);
@@ -182,6 +185,9 @@ function playDailySound(tier) {
 
 /* ── 渲染 ─────────────────────────────────────────── */
 
+/**
+ * @feature F-013 多语言与图鉴呈现（zh/en/ja 三语切换）
+ */
 function renderStatic() {
   const s = getStrings(lang);
   dom.subtitle.textContent = s.subtitle;
@@ -267,12 +273,19 @@ function renderResult() {
   dom.resultImprov.hidden = !info.improvised;
   dom.resultImprov.textContent = s.improvised_badge;
 
-  const [a, b] = lastResult.inputs;
-  const left = describeElement(a, state, lang);
-  const right = describeElement(b, state, lang);
-  const leftName = left ? left.name : a;
-  const rightName = right ? right.name : b;
-  dom.resultFormula.textContent = `${s.formula}: ${leftName} + ${rightName} = ${info.name}`;
+  // 产物卡按来源渲染：熔炼有「原料 → 产物」，每日灵感没有原料概念，
+  // 早期版本把 inputs 留空数组直接拼进模板，结果渲染出 "undefined + undefined"。
+  /** @feature F-015 产物卡按来源分别渲染（熔炼显示配方，每日灵感显示来源） */
+  if (lastResult.source === 'daily') {
+    dom.resultFormula.textContent = `${s.daily_source}: ${info.name} · ${s.tier[info.tier]}`;
+  } else {
+    const [a, b] = lastResult.inputs || [];
+    const left = a ? describeElement(a, state, lang) : null;
+    const right = b ? describeElement(b, state, lang) : null;
+    const leftName = left ? left.name : a;
+    const rightName = right ? right.name : b;
+    dom.resultFormula.textContent = `${s.formula}: ${leftName} + ${rightName} = ${info.name}`;
+  }
 
   dom.resultCard.classList.remove('is-fresh');
   void dom.resultCard.offsetWidth;
@@ -362,7 +375,8 @@ function renderCollection() {
   if (shown === 0) {
     const empty = document.createElement('p');
     empty.className = 'collection-empty';
-    empty.textContent = q ? s.empty_collection : s.empty_collection;
+    /** @feature F-016 搜索无匹配与图鉴为空使用不同提示 */
+    empty.textContent = q ? s.no_match : s.empty_collection;
     dom.collection.append(empty);
   }
 
@@ -409,14 +423,22 @@ function renderRecipes() {
   const entries = Object.entries(state.recipes);
   dom.recipesEmpty.hidden = entries.length > 0;
   for (const [key, outId] of entries.slice(-40).reverse()) {
-    const parts = key.split('+');
+    const order = state.recipeOrder && state.recipeOrder[key];
+    const parts = Array.isArray(order) ? order : key.split('+');
     const out = describeElement(outId, state, lang);
     if (!out || parts.length !== 2) continue;
     const left = describeElement(parts[0], state, lang);
     const right = describeElement(parts[1], state, lang);
     const li = document.createElement('li');
     li.style.setProperty('--tier', `var(--tier-${out.tier})`);
+    /** @feature F-010 配方手册条目可点击，把两个原料装回槽位以便复现 */
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'recipe-btn';
+    btn.dataset.recipe = key;
+    btn.title = s.recipe_replay;
     const input = document.createElement('span');
+    input.className = 'recipe-in';
     input.textContent = `${left ? left.name : parts[0]} + ${right ? right.name : parts[1]}`;
     const arrow = document.createElement('span');
     arrow.className = 'recipe-arrow';
@@ -424,7 +446,8 @@ function renderRecipes() {
     const result = document.createElement('span');
     result.className = 'recipe-out';
     result.textContent = out.name;
-    li.append(input, arrow, result);
+    btn.append(input, arrow, result);
+    li.append(btn);
     dom.recipes.append(li);
   }
   void s;
@@ -457,6 +480,9 @@ function showToast(text) {
   }, 1900);
 }
 
+/**
+ * @feature F-014 熔炼交互：点击图鉴填槽 / 拖拽入槽 / 键盘 F 熔炼 Esc 清空
+ */
 function loadSlot(id) {
   if (!id) return;
   if (slots[0] === null) {
@@ -483,7 +509,7 @@ function doFusion() {
   const b = slots[1];
   const { state: next, result } = applyFusion(state, a, b);
   state = next;
-  lastResult = result;
+  lastResult = { ...result, source: 'fuse' };
   slots = [null, null];
   saveState();
   renderSlots();
@@ -521,6 +547,7 @@ function doDailyDraw() {
     id: result.id,
     isNew: result.isNew,
     inputs: [],
+    source: 'daily',
   };
   renderResult();
   playDailySound(result.tier);
@@ -554,6 +581,20 @@ dom.clearBtn.addEventListener('click', clearForge);
 dom.dailyBtn.addEventListener('click', () => {
   ensureAudio();
   doDailyDraw();
+});
+
+dom.recipes.addEventListener('click', (event) => {
+  const btn = event.target.closest('.recipe-btn');
+  if (!btn) return;
+  const key = btn.dataset.recipe;
+  const order = state.recipeOrder && state.recipeOrder[key];
+  const parts = Array.isArray(order) ? order : String(key).split('+');
+  if (parts.length !== 2) return;
+  loadSlot(parts[0]);
+  loadSlot(parts[1]);
+  showToast(getStrings(lang).recipe_loaded);
+  renderSlots();
+  renderCollection();
 });
 
 dom.resetBtn.addEventListener('click', resetAll);

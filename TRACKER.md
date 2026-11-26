@@ -12,7 +12,7 @@
 | # | 游戏 | 上游参考 | 玩法内核 | 目录 | 单元测试 | 冒烟测试 | 静态审查 | 四道门禁 | 部署 URL | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | ✅ 已过 | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
-| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 36/36 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
+| 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底 | `games/element-forge/` | ✅ 44/44 | ✅ 6/6 | ✅ | ✅ 已过 | https://h3insrj3ydjpe.space.mcode.cn | 已交付 |
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
@@ -27,7 +27,7 @@
 | 游戏 | 缺失的文档 | 已知待查问题 | 门禁 |
 | --- | --- | --- | --- |
 | kanji-rush | ✅ 已补齐（proposal/design/plan/acceptance） | 已补：F-011 音效无测试、图鉴格子数无断言、自动模式无测试；已修 toast 遮挡统计栏与移动端语言按钮断字 | ✅ 已过 |
-| element-forge | ❌ 全缺 | **已审计**（`docs/audit/element-forge.md`，测试 38/38 全绿但游戏有洞）：**P0** 每日保底永不触发（每日上限 5 < 阈值 12 且跨日清零）/ 拖拽入槽完全失效（chip 未设 draggable）/ 结果卡显示 `undefined + undefined`；**P1** chain_hint 从未渲染、配方手册无法点击复现、搜索搜不到未发现词条；**D** 保底测试伪造状态绕过真实路径 | ⏳ 待修复 |
+| element-forge | ✅ 已补齐（proposal/design/plan/acceptance，19 项 F-ID） | 已修：F-015 每日灵感产物卡渲染成 `配方: undefined + undefined`、F-010 配方手册是死文本（README 承诺「方便复现」但条目点不动）、F-016 搜索无结果与「还没发现任何元素」共用同一句提示；已补 `composeImprovised` / `computeGenerations` / `morphemesFor` / `describeElement` / `computeStats` 五个零覆盖逻辑函数的行为断言；已修视觉：雾家族 4 元素共用 🌫️ 渲染成无特征白块、桌面左栏比右栏短约 900px 留白、toast 压住移动端原料槽。**门禁全绿后又被审计查出 4 处结构性空洞，已全部修掉**：每日保底跨日清零导致**永远攒不到阈值**（每日上限 5 < 阈值 12，旧逻辑 365 天 pity 最高仅 5）、拖拽入槽是死代码（chip 是 `<button>` 默认不可拖）、`chain_hint` 文案从未渲染、搜索查不到未发现词条 | ✅ 已过 |
 | angler-almanac | ❌ 全缺 | **已审计**（`docs/audit/angler-almanac.md`，测试 45/45 全绿但游戏有洞）：**P0** 起竿窗口超时判负根本不存在（`onHookTimeout` 死代码）→ 卷线器升级零作用、失误统计恒为 0、"抢时机"玩法核心被架空；饵 Lv.5 显示 `undefined Lv.5`；断线后产物卡仍完整显示鱼种名 | ⏳ 待修复 |
 | tetra-cascade | ❌ 全缺 | 待审计：踢墙表是否完整、锁定延迟续命次数、暂存交换限制、7-bag 表述是否与实现一致 | ⏳ 待修复 |
 | ball-foundry | ❌ 全缺 | 待审计：7 种材质手感是否真的可区分、堆叠结算、升级曲线 | ⏳ 待修复 |
@@ -43,6 +43,11 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 这正是新门禁要解决的问题：设计文档先定出可判定的功能清单与验收标准，
 再让每条功能在代码、测试、验收三处留痕，缺失与半成品都无处藏身。
 
+**element-forge 已按此流程走完**：四道门禁全绿后，又按审计逐条修掉 4 处结构性空洞
+（保底跨日累计、芯片显式可拖、链式合成提示、搜索可查未发现词条），
+并把「保底」那条断言从**伪造状态**改成**只走真实抽取路径**。详见
+`games/element-forge/docs/acceptance.md` 的「门禁之外的自查」一节。
+
 ### 修复流程（每款一套）
 1. `docs/proposal.md` — 立项评审：这一版补齐什么、凭什么值得留
 2. `docs/design.md` — 功能清单 `F-xxx` + 状态机 + 边界 + 打磨清单
@@ -50,6 +55,7 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 4. 代码补 `@feature` 标记、测试补 `@covers` 标记，**补真实缺失功能**
 5. `docs/acceptance.md` — 逐条验收 + 桌面/移动截图人工核对
 6. `node scripts/gate.mjs games/<slug>` 必须全绿
+7. **过门禁后再自审一遍「结构性空洞」**（计数器能否攒到阈值 / 事件前提是否成立 / 文案是否真被渲染 / 断言是否走真实路径），并对照 `docs/audit/<slug>.md`（若有）
 
 ## 已部署
 

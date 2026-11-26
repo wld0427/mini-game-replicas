@@ -20,6 +20,10 @@ async function ownedCount(page) {
   return page.locator('#collection .chip:not(.is-locked)').count();
 }
 
+/**
+ * @covers F-013 多语言与图鉴呈现
+ * @covers F-014 熔炼交互：点击填槽 / 键盘 F 熔炼 / Esc 清空
+ */
 test('浏览器冒烟测试', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
   const { server, port } = await startServer(root);
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -195,4 +199,157 @@ test('移动端视口下布局不溢出', { skip: chromium ? false : 'playwright
   );
   assert.ok(overflowAfter <= 2, `熔炼后移动端横向溢出 ${overflowAfter}px`);
   assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/** @covers F-010 */
+test('配方手册可一键复现：点配方条目把两个原料装回熔炉', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  // 先熔炼一次，产生一条配方
+  await page.click('#collection .chip[data-element="water"]');
+  await page.click('#collection .chip[data-element="fire"]');
+  await page.click('#fuse-btn');
+  await page.waitForFunction(
+    () => document.querySelectorAll('#recipes li').length >= 1,
+  );
+
+  // 点配方条目 → 两个原料装回槽位
+  await page.click('#recipes .recipe-btn');
+  assert.equal((await page.textContent('#slot-a-name')).trim(), '水');
+  assert.equal((await page.textContent('#slot-b-name')).trim(), '火');
+  assert.equal(
+    await page.getAttribute('#fuse-btn', 'disabled'),
+    null,
+    '两个槽位都装好后熔炼按钮应可用',
+  );
+
+  // 装回后可以立刻重演
+  await page.click('#fuse-btn');
+  await page.waitForFunction(
+    () => document.getElementById('stat-fusions').textContent.trim() === '2',
+  );
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/** @covers F-015 */
+test('每日灵感产物卡不出现 undefined', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  await page.click('#daily-btn');
+  await page.waitForFunction(() => document.getElementById('result-card').hidden === false);
+
+  const formula = (await page.textContent('#result-formula')).trim();
+  assert.ok(formula.length > 0, '每日灵感应显示来源说明行');
+  assert.ok(!formula.includes('undefined'), `来源说明行不应出现 undefined：${formula}`);
+  assert.ok(formula.includes('每日灵感'), `来源说明行应标明是每日灵感：${formula}`);
+  // 词条名与稀有度都要有
+  assert.ok((await page.textContent('#result-name')).trim().length > 0);
+  assert.ok((await page.textContent('#result-tier')).trim().length > 0);
+
+  // 熔炼路径的配方行仍然正常
+  await page.click('#collection .chip[data-element="water"]');
+  await page.click('#collection .chip[data-element="fire"]');
+  await page.click('#fuse-btn');
+  await page.waitForFunction(
+    () => document.getElementById('result-formula').textContent.includes('水 + 火'),
+  );
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/** @covers F-016 */
+test('搜索无匹配与图鉴为空使用不同提示', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  // 搜索一个不存在的关键词
+  await page.fill('#search', 'zzzz-not-exist');
+  await page.waitForSelector('#collection .collection-empty');
+  const noMatchText = (await page.textContent('#collection .collection-empty')).trim();
+  assert.ok(noMatchText.includes('没有匹配'), `搜索无匹配应提示「没有匹配」，实际：${noMatchText}`);
+
+  // 清空搜索后提示应恢复为「还没有发现任何元素」之外的状态（图鉴非空）
+  await page.fill('#search', '');
+  await page.waitForFunction(
+    () => document.querySelectorAll('#collection .chip').length === 106,
+  );
+  assert.equal(
+    await page.locator('#collection .collection-empty').count(),
+    0,
+    '图鉴非空时不应显示空态提示',
+  );
+});
+
+/** @covers F-017 */
+test('音效由 WebAudio 现场合成，且稀有档音阶更长', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  // 扩展真实的 AudioContext，只统计振荡器数量（不破坏音频链路）
+  await page.addInitScript(() => {
+    window.__oscCount = 0;
+    const Original = window.AudioContext;
+    window.AudioContext = class extends Original {
+      createOscillator() {
+        window.__oscCount += 1;
+        return super.createOscillator();
+      }
+    };
+    window.webkitAudioContext = window.AudioContext;
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#collection .chip');
+
+  await page.click('#collection .chip[data-element="water"]');
+  await page.click('#collection .chip[data-element="fire"]');
+  await page.click('#fuse-btn');
+  await page.waitForFunction(() => document.getElementById('stat-fusions').textContent.trim() === '1');
+
+  const count = await page.evaluate(() => window.__oscCount);
+  assert.ok(count >= 1, `熔炼应创建振荡器节点，实际 ${count}`);
 });

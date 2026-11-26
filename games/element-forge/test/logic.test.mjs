@@ -11,12 +11,15 @@ import {
 } from '../assets/data.js';
 import {
   ACHIEVEMENTS,
+  composeImprovised,
+  describeElement,
   GENERATIONS,
   RECIPE_MAP,
   TIER_IDS,
   applyDailyDraw,
   applyFusion,
   composeWord,
+  computeStats,
   countNameCollision,
   createState,
   deserializeState,
@@ -52,6 +55,7 @@ function fullState() {
 
 /* ── 数据完整性 ───────────────────────────────────── */
 
+/** @covers F-001 */
 test('合成表里没有重复的原料对', () => {
   const seen = new Set();
   const dupes = [];
@@ -78,6 +82,7 @@ test('每个词条都能由基础元素合成得到', () => {
   assert.deepEqual(unreachable, [], `以下词条无法合成: ${unreachable.join(', ')}`);
 });
 
+/** @covers F-006 */
 test('基础元素层数为 0，其余词条层数大于 0', () => {
   for (const id of BASE_IDS) assert.equal(GENERATIONS.get(id), 0, `${id} 层数应为 0`);
   for (const id of ELEMENT_IDS) {
@@ -86,6 +91,7 @@ test('基础元素层数为 0，其余词条层数大于 0', () => {
   }
 });
 
+/** @covers F-001 */
 test('词条总数与稀有度分档都符合预期', () => {
   assert.ok(ELEMENT_IDS.length >= 100, `词条过少: ${ELEMENT_IDS.length}`);
   for (const el of Object.values(ELEMENTS)) {
@@ -97,11 +103,13 @@ test('词条总数与稀有度分档都符合预期', () => {
 
 /* ── 配方键与确定性 ───────────────────────────────── */
 
+/** @covers F-002 */
 test('配方键与顺序无关', () => {
   assert.equal(recipeKey('water', 'fire'), recipeKey('fire', 'water'));
   assert.notEqual(recipeKey('water', 'fire'), recipeKey('water', 'wind'));
 });
 
+/** @covers F-003 */
 test('同一对原料永远得到同一个结果', () => {
   const state = fullState();
   const first = applyFusion(state, 'water', 'star');
@@ -113,6 +121,7 @@ test('同一对原料永远得到同一个结果', () => {
   }
 });
 
+/** @covers F-002 */
 test('熔炼顺序不影响结果', () => {
   const state = fullState();
   assert.equal(
@@ -141,6 +150,7 @@ test('mulberry32 输出落在 [0,1) 且可复现', () => {
 
 /* ── 熔炼规则 ─────────────────────────────────────── */
 
+/** @covers F-002 */
 test('命中合成表时走固定配方', () => {
   const state = createState();
   const { state: next, result } = applyFusion(state, 'water', 'fire');
@@ -162,6 +172,7 @@ test('表外组合走原创合成，并标记为原创', () => {
   assert.ok(result.names.zh.length > 0);
 });
 
+/** @covers F-003 */
 test('原创合成使用中文构词法：定语 + 中心语', () => {
   const state = createState();
   const { state: next, result } = applyFusion(state, 'water', 'fire');
@@ -181,6 +192,7 @@ test('原创词条也能继续参与合成', () => {
   assert.ok(second.state.collection[first.result.id], '原创词条应留在图鉴里');
 });
 
+/** @covers F-009 */
 test('重复熔炼同一对原料只增加计数，不重复发现', () => {
   const state = createState();
   const first = applyFusion(state, 'water', 'moon');
@@ -199,6 +211,7 @@ test('重复熔炼不会让原创词条改名', () => {
   assert.equal(second.result.names.en, first.result.names.en);
 });
 
+/** @covers F-004 */
 test('原创词条重名时会追加序号', () => {
   const state = createState();
   // 两个不同配方拼出同一个词时，第二个应带序号
@@ -215,6 +228,7 @@ test('原创词条重名时会追加序号', () => {
   assert.equal(countNameCollision(patched, '水星', 'zh', 'imp:fake~one'), 0);
 });
 
+/** @covers F-004 */
 test('增幅前缀池非空且各语言都有文案', () => {
   assert.ok(AMPLIFIERS.length >= 4);
   for (const amp of AMPLIFIERS) {
@@ -222,6 +236,7 @@ test('增幅前缀池非空且各语言都有文案', () => {
   }
 });
 
+/** @covers F-006 */
 test('层数随合成深度增长', () => {
   const state = fullState();
   const shallow = applyFusion(state, 'water', 'fire');
@@ -247,6 +262,7 @@ test('按权重挑稀有度：分布落在容差内', () => {
   }
 });
 
+/** @covers F-005 */
 test('原创合成的稀有度权重随层数变稀有', () => {
   const shallow = improvisedTierWeights(1);
   const deep = improvisedTierWeights(6);
@@ -284,6 +300,7 @@ test('全表外组合的稀有度分布与权重一致', () => {
 
 /* ── 每日灵感与保底 ───────────────────────────────── */
 
+/** @covers F-007 */
 test('每日抽取有次数上限', () => {
   let state = createState();
   for (let i = 0; i < DAILY_LIMIT; i += 1) {
@@ -295,6 +312,7 @@ test('每日抽取有次数上限', () => {
   assert.equal(result.limited, true, '超出上限应被拒绝');
 });
 
+/** @covers F-008 */
 test('连续未出传说时触发保底', () => {
   let state = createState();
   state.daily = { date: '2026-01-02', draws: 0, pity: DAILY_PITY_LIMIT, lastId: null };
@@ -322,6 +340,7 @@ test('同一天连续抽取得到不同元素', () => {
   assert.notEqual(first, second, '同一天的多次抽取不应重复');
 });
 
+/** @covers F-007 */
 test('每日抽取优先给还没收集过的词条', () => {
   const state = createState();
   const { state: next } = applyDailyDraw(state, '2026-03-03');
@@ -332,6 +351,7 @@ test('每日抽取优先给还没收集过的词条', () => {
 
 /* ── 成就 ─────────────────────────────────────────── */
 
+/** @covers F-011 */
 test('成就只解锁一次', () => {
   const state = createState();
   const { state: afterFusion, result } = applyFusion(state, 'water', 'fire');
@@ -363,6 +383,7 @@ test('所有成就都有三语文案', () => {
 
 /* ── 存档 ─────────────────────────────────────────── */
 
+/** @covers F-012 */
 test('序列化 / 反序列化可完整往返', () => {
   let state = createState();
   state = applyFusion(state, 'water', 'fire').state;
@@ -418,6 +439,7 @@ test('熔炼缺少原料或原料非法时抛错', () => {
   assert.throws(() => applyFusion(state, 'water', 'not_an_element'));
 });
 
+/** @covers F-001 */
 test('初始状态包含四个基础元素', () => {
   const state = createState();
   assert.equal(distinctCount(state), BASE_IDS.length);
@@ -427,4 +449,125 @@ test('初始状态包含四个基础元素', () => {
 test('空权重时退化为普通档', () => {
   const rng = mulberry32(7);
   assert.equal(pickTierByWeight(rng, { n: 0, r: 0, sr: 0, ssr: 0, ur: 0 }), 'n');
+});
+
+/** @covers F-003 */
+test('原创合成的结果只由配方散列决定：同一对原料两次调用得到完全相同的名字', () => {
+  const hash = hashString(recipeKey('water', 'steam'));
+  const first = composeImprovised('water', 'steam', createState(), hash);
+  const second = composeImprovised('water', 'steam', createState(), hash);
+  assert.equal(first.names.zh, second.names.zh);
+  assert.equal(first.names.en, second.names.en);
+  assert.equal(first.names.ja, second.names.ja);
+  assert.equal(first.id, second.id);
+});
+
+/** @covers F-004 */
+test('重名检测统计同名原创词条，并排除正在生成的那一个', () => {
+  const state = createState();
+  const record = { count: 1, gen: 1, tier: 'n', improvised: true, names: { zh: '同名', en: 'Same', ja: '同名' }, glyph: '🧪' };
+  state.collection['imp:a~b'] = { ...record };
+  state.collection['imp:c~d'] = { ...record };
+  assert.equal(countNameCollision(state, '同名', 'zh'), 2);
+  assert.equal(countNameCollision(state, '同名', 'zh', 'imp:a~b'), 1);
+  // 正式词条不参与原创词重名统计
+  assert.equal(countNameCollision(state, '水', 'zh'), 0);
+});
+
+/** @covers F-004 */
+test('原创词撞上已有同名原创词时会被加序号', () => {
+  const state = createState();
+  const hash = hashString(recipeKey('water', 'steam'));
+  const first = composeImprovised('water', 'steam', state, hash);
+  // 伪造一个同名但 id 不同的原创词条
+  state.collection['imp:other~one'] = { count: 1, gen: 1, tier: 'n', improvised: true, names: { ...first.names }, glyph: '🧪' };
+  const again = composeImprovised('water', 'steam', state, hash);
+  assert.notEqual(again.names.zh, first.names.zh, '撞名后应改名字');
+  assert.match(again.names.zh, /·\d+$/, '撞名后应追加序号');
+});
+
+/** @covers F-005 */
+test('原创合成的稀有度权重：层数越深，普通档越轻、传说与神话档越重', () => {
+  const shallow = improvisedTierWeights(1);
+  const deep = improvisedTierWeights(6);
+  assert.ok(shallow.n > deep.n, '普通档权重应随层数下降');
+  assert.ok(deep.ssr > shallow.ssr, '传说档权重应随层数上升');
+  assert.ok(deep.ur >= shallow.ur, '神话档权重不应随层数下降');
+  // 层数被夹在 1..6，越界不改变权重
+  assert.deepEqual(improvisedTierWeights(0), improvisedTierWeights(1));
+  assert.deepEqual(improvisedTierWeights(99), improvisedTierWeights(6));
+});
+
+/** @covers F-006 */
+test('合成层数表：基础元素 0 层，每熔炼一次 +1', () => {
+  assert.equal(GENERATIONS.get('water'), 0);
+  assert.equal(GENERATIONS.get('fire'), 0);
+  assert.equal(GENERATIONS.get('steam'), 1);
+  assert.equal(GENERATIONS.get('rain'), 2);
+  // 层数随层严格递增：产物的层数大于两个原料的层数
+  const state = createState();
+  const fused = applyFusion(state, 'water', 'steam');
+  const outId = fused.result.id;
+  assert.ok(GENERATIONS.get(outId) > GENERATIONS.get('water'));
+  assert.ok(GENERATIONS.get(outId) > GENERATIONS.get('steam'));
+});
+
+/** @covers F-009 */
+test('图鉴词条描述与统计口径一致', () => {
+  let state = createState();
+  assert.equal(distinctCount(state), 4);
+  const before = computeStats(state);
+  assert.equal(before.distinct, 4);
+  assert.equal(before.total, 4);
+  assert.equal(before.maxGen, 0);
+
+  state = applyFusion(state, 'water', 'fire').state;
+  const after = computeStats(state);
+  assert.equal(after.distinct, 5, '熔炼后应多一个词条');
+  assert.equal(after.fusions, 1);
+  assert.equal(after.discoveries, 1);
+  assert.ok(after.maxGen >= 1, '最深层数应至少为 1');
+
+  // 正式词条与原创词条用同一套描述口径
+  const steam = describeElement('steam', state, 'zh');
+  assert.equal(steam.name, '蒸汽');
+  assert.equal(steam.improvised, false);
+  assert.equal(steam.count, 1);
+  assert.equal(describeElement('steam', state, 'en').name, 'Steam');
+  assert.equal(describeElement('steam', state, 'ja').name, '蒸気');
+  // 未收录的词条也能描述，但计数为 0
+  const locked = describeElement('sun', state, 'zh');
+  assert.equal(locked.count, 0);
+  assert.equal(locked.improvised, false);
+  // 完全不存在的 id 返回 null
+  assert.equal(describeElement('not_an_element', state, 'zh'), null);
+});
+
+/** @covers F-009 */
+test('原创词条在图鉴里被标记为原创，且能读到它的名字与层数', () => {
+  const state = createState();
+  // 选一对确定不在合成表里的原料，保证走的是原创分支
+  assert.equal(RECIPE_MAP.has(recipeKey('water', 'smoke')), false, '该组合应当不在合成表内');
+  const fused = applyFusion(state, 'water', 'smoke');
+  const id = fused.result.id;
+  const info = describeElement(id, fused.state, 'zh');
+  assert.equal(info.improvised, true);
+  assert.ok(info.name.length > 0);
+  assert.ok(info.gen >= 1, '原创词条应有层数');
+  assert.equal(fused.state.collection[id].improvised, true);
+  // 原创词条不占用正式词条的位置
+  assert.equal(Object.prototype.hasOwnProperty.call(ELEMENTS, id), false);
+});
+
+/** @covers F-010 */
+test('每次熔炼都把配方记进手册，且键是顺序无关的', () => {
+  let state = createState();
+  state = applyFusion(state, 'water', 'fire').state;
+  state = applyFusion(state, 'water', 'steam').state;
+  assert.equal(Object.keys(state.recipes).length, 2, '手册应记录两条配方');
+  const key = recipeKey('water', 'fire');
+  assert.equal(state.recipes[key], 'steam', '手册键应为顺序无关的配方键');
+  // 同一对原料重复熔炼不会新增配方条目
+  state = applyFusion(state, 'fire', 'water').state;
+  assert.equal(Object.keys(state.recipes).length, 2, '重复熔炼同一对原料不应新增配方');
 });

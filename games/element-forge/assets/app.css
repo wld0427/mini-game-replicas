@@ -153,16 +153,26 @@ button { font: inherit; color: inherit; }
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  grid-template-areas:
+    "forge      collection"
+    "forge      achievements"
+    "daily      achievements"
+    "recipes    achievements";
   gap: clamp(0.9rem, 2vw, 1.6rem);
   align-items: start;
   padding: clamp(0.9rem, 3vw, 2rem);
   max-width: 1380px;
   margin: 0 auto;
 }
+.layout > * { min-width: 0; }
 
-.forge-wrap, .side { min-width: 0; }
-
-.side { display: grid; gap: clamp(0.8rem, 2vw, 1.1rem); }
+/* 左栏：熔炉 + 配方手册；右栏：图鉴 + 每日灵感 + 成就。
+   网格区域让两栏按内容自动配平，桌面端不再出现大片留白。 */
+#forge { grid-area: forge; }
+.panel-collection { grid-area: collection; }
+.panel-daily { grid-area: daily; }
+.panel-ach { grid-area: achievements; }
+.panel-recipes { grid-area: recipes; }
 
 /* ── 熔炉 ─────────────────────────────────────────── */
 
@@ -438,12 +448,31 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.3rem 0.4rem;
+  padding: 0.1rem;
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.18);
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
+.recipe-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.25rem 0.35rem;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.recipe-btn:hover { background: rgba(255, 255, 255, 0.09); }
+.recipe-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.recipe-btn .recipe-in { color: var(--muted); }
 .recipe-arrow { color: var(--muted); }
 .recipe-out { color: var(--tier, var(--text)); font-weight: 700; }
 
@@ -453,7 +482,7 @@ button { font: inherit; color: inherit; }
 
 .toast {
   position: fixed;
-  top: 78px;
+  bottom: 1.4rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
@@ -469,7 +498,7 @@ button { font: inherit; color: inherit; }
   pointer-events: none;
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
-.toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(6px); }
+.toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(-6px); }
 
 /* ── 动画 ─────────────────────────────────────────── */
 
@@ -496,8 +525,24 @@ button { font: inherit; color: inherit; }
 /* ── 响应式 ───────────────────────────────────────── */
 
 @media (max-width: 980px) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
+  /* 单列：熔炉 → 图鉴 → 每日灵感 → 成就 → 配方手册，保持核心玩法链路顺序 */
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
+  #forge,
+  .panel-collection,
+  .panel-daily,
+  .panel-ach,
+  .panel-recipes { grid-area: auto; }
+  #forge { order: 1; }
+  .panel-collection { order: 2; }
+  .panel-daily { order: 3; }
+  .panel-ach { order: 4; }
+  .panel-recipes { order: 5; }
   .collection { max-height: 300px; }
+}
+
+/* 桌面端：成就面板跨行填满右栏，让两栏底端对齐 */
+@media (min-width: 981px) {
+  .panel-ach { align-self: stretch; }
 }
 
 @media (max-width: 560px) {
@@ -510,8 +555,8 @@ button { font: inherit; color: inherit; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem 0.4rem; }
   .collection { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); max-height: 260px; }
   .result-glyph { font-size: 2.2rem; }
-  /* 顶栏在窄屏会折成两行，提示条要往下让开 */
-  .toast { top: 122px; }
+  /* toast 固定在底部，窄屏时顶栏折成两行也不会压住熔炉槽位 */
+  .toast { bottom: 1rem; }
 }
 
 /* ── 降低动效偏好 ─────────────────────────────────── */

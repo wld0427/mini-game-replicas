@@ -25,6 +25,7 @@ import {
 /** 稀有度档位，权重用于原创合成的概率分布。 */
 export const TIER_IDS = ['n', 'r', 'sr', 'ssr', 'ur'];
 
+/** @feature F-001 基础元素与五档稀有度（n/r/sr/ssr/ur） */
 export const TIERS = {
   n: { id: 'n', weight: 100, label: 'Common', zh: '普通', ja: 'コモン' },
   r: { id: 'r', weight: 45, label: 'Rare', zh: '稀有', ja: 'レア' },
@@ -98,6 +99,9 @@ for (const [a, b, out] of RECIPES) {
  * @param {string[]} baseIds
  * @returns {Map<string, number>}
  */
+/**
+ * @feature F-006 合成层数计算：基础元素 0 层，每熔炼一次 +1
+ */
 export function computeGenerations(recipes, baseIds) {
   const gen = new Map();
   for (const id of baseIds) gen.set(id, 0);
@@ -139,6 +143,9 @@ const LANGS = ['zh', 'en', 'ja'];
  * @param {string} lang
  * @returns {{mod: string, core: string}}
  */
+/**
+ * @feature F-003 词素取用：原创词条从存档取，正式词条查 MORPH 表
+ */
 export function morphemesFor(id, state, lang) {
   const rec = state.collection[id];
   if (rec && rec.improvised && rec.mod && rec.core) {
@@ -169,6 +176,9 @@ export function composeWord(mod, core, lang) {
  * @param {GameState} state
  * @param {number} hash 该配方的稳定散列
  * @returns {{id: string, names: Record<string, string>, glyph: string, mod: Record<string, string>, core: Record<string, string>}}
+ */
+/**
+ * @feature F-003 原创合成构词：定语 + 中心语，结果只由配方散列决定
  */
 export function composeImprovised(aId, bId, state, hash) {
   // 中文复合词以「定语 + 中心语」为主，所以默认让 A 当定语；
@@ -228,6 +238,9 @@ export function composeImprovised(aId, bId, state, hash) {
  * @param {string} lang
  * @param {string} [excludeId] 计算时要排除的词条（正在生成的那一个）
  */
+/**
+ * @feature F-004 原创词重名消歧：撞正式词加增幅前缀，原创词之间重名加序号
+ */
 export function countNameCollision(state, name, lang, excludeId) {
   let hits = 0;
   for (const [id, rec] of Object.entries(state.collection)) {
@@ -243,6 +256,9 @@ export function countNameCollision(state, name, lang, excludeId) {
  * 原创合成的稀有度权重：层数越深越容易出稀有结果。
  * @param {number} gen 产物层数
  * @returns {Record<string, number>}
+ */
+/**
+ * @feature F-005 原创合成稀有度随合成层数提高
  */
 export function improvisedTierWeights(gen) {
   const depth = Math.min(Math.max(Math.floor(gen), 1), 6);
@@ -311,6 +327,7 @@ export function createState() {
     version: 1,
     collection: Object.create(null),
     recipes: Object.create(null),
+    recipeOrder: Object.create(null),
     achievements: Object.create(null),
     stats: {
       fusions: 0,
@@ -349,6 +366,9 @@ export function generationOf(state, id) {
  * @param {GameState} state
  * @param {string} lang
  */
+/**
+ * @feature F-009 图鉴词条描述（正式与原创统一口径）
+ */
 export function describeElement(id, state, lang) {
   const rec = state.collection[id];
   if (rec) {
@@ -381,6 +401,10 @@ export function describeElement(id, state, lang) {
  * @param {string} aId
  * @param {string} bId
  * @returns {{state: GameState, result: object}}
+ */
+/**
+ * @feature F-002 合成表命中与顺序无关
+ * @feature F-009 图鉴收集与原创词条目
  */
 export function applyFusion(state, aId, bId) {
   if (!aId || !bId) throw new Error('fusion needs two elements');
@@ -428,6 +452,7 @@ export function applyFusion(state, aId, bId) {
     ...state,
     collection: Object.assign(Object.create(null), state.collection),
     recipes: Object.assign(Object.create(null), state.recipes),
+    recipeOrder: Object.assign(Object.create(null), state.recipeOrder),
     achievements: Object.assign(Object.create(null), state.achievements),
     stats: {
       ...state.stats,
@@ -448,6 +473,9 @@ export function applyFusion(state, aId, bId) {
     ...(improvised ? { mod, core } : {}),
   };
   next.recipes[key] = outId;
+  // 配方键是顺序无关的，但展示时沿用玩家实际放进去的顺序，
+  // 否则配方手册里会显示成排序后的顺序，和产物卡对不上
+  if (!next.recipeOrder[key]) next.recipeOrder[key] = [aId, bId];
 
   next.stats.fusions += 1;
   if (isNew) next.stats.discoveries += 1;
@@ -481,6 +509,10 @@ export function applyFusion(state, aId, bId) {
  * @param {GameState} state
  * @param {string} dateKey 日期键（YYYY-MM-DD）
  * @returns {{state: GameState, result: object}}
+ */
+/**
+ * @feature F-007 每日灵感抽取与每日上限
+ * @feature F-008 每日灵感保底
  */
 export function applyDailyDraw(state, dateKey) {
   const next = {
@@ -582,6 +614,9 @@ export const ACHIEVEMENTS = [
  * 检查并解锁成就，返回本次新解锁的成就列表。
  * @param {GameState} state 会被就地更新的状态对象
  */
+/**
+ * @feature F-011 成就系统：按进度解锁且只解锁一次
+ */
 export function updateAchievements(state) {
   const unlocked = [];
   for (const ach of ACHIEVEMENTS) {
@@ -597,6 +632,9 @@ export function updateAchievements(state) {
 /* ── 统计 ───────────────────────────────────────────── */
 
 /** 统计面板数据。 */
+/**
+ * @feature F-009 图鉴统计口径
+ */
 export function computeStats(state) {
   return {
     distinct: distinctCount(state),
@@ -621,6 +659,7 @@ export function serializeState(state) {
     version: state.version,
     collection: state.collection,
     recipes: state.recipes,
+    recipeOrder: state.recipeOrder,
     achievements: state.achievements,
     stats: state.stats,
     daily: state.daily,
@@ -632,6 +671,9 @@ export function serializeState(state) {
  * 从存档字符串恢复状态，任何字段异常都回退到安全默认值。
  * @param {string|null} raw
  * @returns {GameState}
+ */
+/**
+ * @feature F-012 本地存档与脏数据回退
  */
 export function deserializeState(raw) {
   const base = createState();
@@ -701,6 +743,15 @@ export function deserializeState(raw) {
     }
   }
 
+  const recipeOrder = Object.create(null);
+  if (parsed.recipeOrder && typeof parsed.recipeOrder === 'object' && !Array.isArray(parsed.recipeOrder)) {
+    for (const [key, order] of Object.entries(parsed.recipeOrder)) {
+      if (Array.isArray(order) && order.length === 2 && typeof order[0] === 'string' && typeof order[1] === 'string') {
+        recipeOrder[key] = [order[0], order[1]];
+      }
+    }
+  }
+
   const achievements = Object.create(null);
   if (parsed.achievements && typeof parsed.achievements === 'object' && !Array.isArray(parsed.achievements)) {
     for (const ach of ACHIEVEMENTS) {
@@ -724,6 +775,7 @@ export function deserializeState(raw) {
     version: 1,
     collection,
     recipes,
+    recipeOrder,
     achievements,
     stats: {
       fusions: safeInt(parsed.stats && parsed.stats.fusions),
