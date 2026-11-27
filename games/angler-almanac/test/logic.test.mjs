@@ -52,6 +52,7 @@ function stateWith(upgrades = {}) {
   return state;
 }
 
+/** @covers F-007 */
 /** 模拟「会玩」的玩家：标记进入甜区才收线。 */
 function playReel(species, seed, mode = 'sharp') {
   const rng = mulberry32(seed);
@@ -86,6 +87,8 @@ test('鱼种数据完整且 id 唯一', () => {
   }
 });
 
+/** @covers F-011 */
+/** @covers F-008 */
 test('五个稀有度档位都有鱼种', () => {
   for (const id of TIER_IDS) {
     const count = SPECIES.filter((s) => s.tier === id).length;
@@ -105,6 +108,7 @@ test('鱼种池随饵等级扩大', () => {
   }
 });
 
+/** @covers F-011 */
 test('最深档位随饵等级推进', () => {
   assert.equal(deepestTier(stateWith({ bait: 0 })), 'n');
   assert.equal(deepestTier(stateWith({ bait: 1 })), 'r');
@@ -113,6 +117,8 @@ test('最深档位随饵等级推进', () => {
   assert.equal(deepestTier(stateWith({ bait: 4 })), 'ur');
 });
 
+/** @covers F-008 */
+/** @covers F-011 F-008 */
 test('未解锁档位不可钓', () => {
   const state = stateWith({ bait: 0 });
   assert.equal(tierUnlocked(state, 'n'), true);
@@ -131,6 +137,7 @@ test('未解锁档位的权重并入当前最深档', () => {
   assert.equal(weights.r, undefined);
 });
 
+/** @covers F-008 */
 test('鱼竿等级把权重推向稀有档', () => {
   const plain = rarityWeights(stateWith({ bait: 4, rod: 0 }));
   const lucky = rarityWeights(stateWith({ bait: 4, rod: 8 }));
@@ -139,6 +146,7 @@ test('鱼竿等级把权重推向稀有档', () => {
   assert.ok(lucky.n < plain.n, '普通档权重应随幸运下降');
 });
 
+/** @covers F-008 */
 test('按权重抽取的稀有度分布与设定一致', () => {
   const state = stateWith({ bait: 4, rod: 0 });
   const weights = rarityWeights(state);
@@ -156,6 +164,8 @@ test('按权重抽取的稀有度分布与设定一致', () => {
   assert.ok(counts.ur / total > 0.002 && counts.ur / total < 0.015, `神话档比例异常: ${counts.ur / total}`);
 });
 
+/** @covers F-009 */
+/** @covers F-001 F-008 */
 test('实际开竿抽到的稀有度分布与权重一致', () => {
   const state = stateWith({ bait: 4 });
   const rng = mulberry32(777);
@@ -176,6 +186,7 @@ test('保底触发时必出当前最深档', () => {
   }
 });
 
+/** @covers F-009 */
 test('保底未满时按权重抽取', () => {
   const state = stateWith({ bait: 3 });
   state.pity = PITY_LIMIT - 1;
@@ -185,6 +196,7 @@ test('保底未满时按权重抽取', () => {
   assert.ok(tiers.size > 1, '保底未满时应出现多种稀有度');
 });
 
+/** @covers F-009 */
 test('只有浅滩时保底不累积', () => {
   let state = stateWith({ bait: 0 });
   for (let i = 0; i < 30; i += 1) {
@@ -194,6 +206,7 @@ test('只有浅滩时保底不累积', () => {
   assert.equal(state.pity, 0, '只钓得到最深档时保底应保持为 0');
 });
 
+/** @covers F-009 */
 test('没钓到最深档时保底累积，钓到时清零', () => {
   let state = stateWith({ bait: 2 });
   const plain = SPECIES.find((s) => s.tier === 'n');
@@ -206,6 +219,8 @@ test('没钓到最深档时保底累积，钓到时清零', () => {
   assert.equal(state.pity, 0, '钓到最深档应清零');
 });
 
+/** @covers F-006 */
+/** @covers F-009 F-011 */
 test('换水层会重置保底进度', () => {
   let state = stateWith({ bait: 1 });
   state.coins = 1000;
@@ -238,6 +253,7 @@ test('体长落在鱼种区间内且偏向小个体', () => {
   assert.ok(maxSeen > species.minCm, '应能摇出比最小更大个体的鱼');
 });
 
+/** @covers F-006 */
 test('大个体判定按区间后 15% 计算', () => {
   const species = SPECIES_BY_ID.shark;
   assert.equal(isBigCatch(species, species.minCm), false);
@@ -245,6 +261,8 @@ test('大个体判定按区间后 15% 计算', () => {
   assert.equal(isBigCatch(species, species.minCm + (species.maxCm - species.minCm) * 0.85), true);
 });
 
+/** @covers F-004 */
+/** @covers F-010 */
 test('售价随体型与鱼篓等级上升', () => {
   const species = SPECIES_BY_ID.carp;
   const plain = stateWith();
@@ -265,6 +283,7 @@ test('挣扎标记始终落在 0–1 之间', () => {
   }
 });
 
+/** @covers F-003 F-004 */
 test('甜区越窄、挣扎越快：稀有鱼更难钓', () => {
   let prevWidth = Infinity;
   let prevFreq = 0;
@@ -277,6 +296,7 @@ test('甜区越窄、挣扎越快：稀有鱼更难钓', () => {
   }
 });
 
+/** @covers F-004 */
 test('好时机收线降张力，坏时机升张力', () => {
   const species = SPECIES_BY_ID.carp;
   const reel = startReel(species, mulberry32(5));
@@ -289,6 +309,7 @@ test('好时机收线降张力，坏时机升张力', () => {
   assert.ok(afterBad.tension > 60, '坏时机应升张力');
 });
 
+/** @covers F-004 F-006 */
 test('张力拉满会断线，张力归零则上钩', () => {
   const species = SPECIES_BY_ID.carp;
   const reel = startReel(species, mulberry32(9));
@@ -302,6 +323,7 @@ test('张力拉满会断线，张力归零则上钩', () => {
   assert.equal(landed.snapped, false);
 });
 
+/** @covers F-003 F-004 */
 test('会玩的玩家能把各档鱼钓上来', () => {
   for (const id of TIER_IDS) {
     const species = SPECIES.find((s) => s.tier === id);
@@ -310,6 +332,7 @@ test('会玩的玩家能把各档鱼钓上来', () => {
   }
 });
 
+/** @covers F-004 F-006 */
 test('乱点收线必然断线', () => {
   for (const id of TIER_IDS) {
     const species = SPECIES.find((s) => s.tier === id);
@@ -319,6 +342,8 @@ test('乱点收线必然断线', () => {
   }
 });
 
+/** @covers F-002 F-010 */
+/** @covers F-004 */
 test('点击冷却生效，连点不会连续判定', () => {
   const reel = startReel(SPECIES_BY_ID.carp, mulberry32(11));
   const once = stepReel(reel, true, 0.016);
@@ -338,6 +363,8 @@ test('起竿窗口随卷线器变宽、随水层变窄，且有下限', () => {
   assert.ok(deeper >= 480, '起竿窗口不应低于下限');
 });
 
+/** @covers F-006 F-007 */
+/** @covers F-001 */
 test('抛竿会增加投竿次数并给出等待时长', () => {
   const state = createState();
   const { state: next, biteDelay } = applyCast(state, mulberry32(3));
@@ -359,6 +386,7 @@ test('上鱼会进图鉴、给钱、记最大个体', () => {
   assert.equal(result.isNew, true);
 });
 
+/** @covers F-007 */
 test('重复上同一种只加计数，最大个体取较大者', () => {
   let state = createState();
   const species = SPECIES_BY_ID.carp;
@@ -370,6 +398,7 @@ test('重复上同一种只加计数，最大个体取较大者', () => {
   assert.equal(second.result.isNew, false);
 });
 
+/** @covers F-006 */
 test('钓到大个体会被记录', () => {
   const state = createState();
   const species = SPECIES_BY_ID.shark;
@@ -377,6 +406,8 @@ test('钓到大个体会被记录', () => {
   assert.equal(hasBigCatch(next), true);
 });
 
+/** @covers F-010 */
+/** @covers F-002 F-006 */
 test('跑掉的鱼计入失误统计', () => {
   const state = createState();
   assert.equal(applyLoss(state, 'miss').stats.misses, 1);
@@ -401,6 +432,7 @@ test('升级扣钱、提升等级，钱不够或满级则拒绝', () => {
   assert.equal(applyUpgrade(state, 'not_a_gear'), null, '未知装备不应升级');
 });
 
+/** @covers F-010 */
 test('升级价格随等级递增', () => {
   let previous = 0;
   for (let level = 0; level < 5; level += 1) {
@@ -410,6 +442,8 @@ test('升级价格随等级递增', () => {
   }
 });
 
+/** @covers F-012 */
+/** @covers F-010 */
 test('装备等级总和可统计', () => {
   const state = stateWith({ rod: 2, reel: 3, bait: 1, basket: 2 });
   assert.equal(totalUpgradeLevels(state), 8);
@@ -426,6 +460,7 @@ test('成就只解锁一次', () => {
   assert.equal(afterCatch.achievements.first_catch, true);
 });
 
+/** @covers F-012 F-014 */
 test('所有成就都有三语文案', () => {
   for (const ach of ACHIEVEMENTS) {
     assert.ok(ach.zh && ach.en && ach.ja, `${ach.id} 缺少文案`);
@@ -433,6 +468,8 @@ test('所有成就都有三语文案', () => {
   }
 });
 
+/** @covers F-013 */
+/** @covers F-012 F-010 */
 test('装备等级足够时解锁「装备精良」', () => {
   const state = stateWith({ rod: 4, reel: 4 });
   updateAchievements(state);
@@ -454,6 +491,7 @@ test('序列化 / 反序列化可完整往返', () => {
   assert.equal(restored.stats.bestCm, 300);
 });
 
+/** @covers F-013 */
 test('反序列化面对脏数据不崩溃并回退到安全默认值', () => {
   const cases = [
     null,
@@ -480,6 +518,8 @@ test('反序列化面对脏数据不崩溃并回退到安全默认值', () => {
   }
 });
 
+/** @covers F-008 */
+/** @covers F-013 */
 test('存档里的未知鱼种会被安全忽略', () => {
   const raw = JSON.stringify({
     dex: { 'imp:ghost~fish': { count: 9, bestCm: 100 } },
@@ -498,6 +538,7 @@ test('档位排名随稀有度递增', () => {
   }
 });
 
+/** @covers F-016 */
 test('统计面板数据自洽', () => {
   const state = stateWith({ bait: 2, rod: 1 });
   const stats = computeStats(state);
@@ -508,11 +549,13 @@ test('统计面板数据自洽', () => {
   assert.equal(stats.pityArmed, true);
 });
 
+/** @covers F-008 */
 test('空档位的权重不会导致除零', () => {
   const rng = mulberry32(5);
   assert.equal(pickTierByWeight(rng, { n: 0, r: 0, sr: 0, ssr: 0, ur: 0 }), 'n');
 });
 
+/** @covers F-004 F-015 */
 test('遛鱼参数不会让张力越界', () => {
   const reel = startReel(SPECIES_BY_ID.carp, mulberry32(2));
   let current = reel;

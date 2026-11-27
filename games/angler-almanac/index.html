@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
-<a class="skip-link" href="#stage">跳到抛竿区</a>
+<a class="skip-link" href="#stage" data-i18n="skip_to_stage">跳到抛竿区</a>
 
 <header class="topbar">
   <div class="brand">
@@ -50,6 +50,22 @@
         <div class="bobber" id="bobber"><span class="bobber-flag"></span></div>
         <div class="splash" id="splash"></div>
       </div>
+
+      <!-- 遛鱼时的鱼影与钓线：把张力画成「鱼在往哪跑」 -->
+      <svg class="scene-overlay" id="scene-overlay" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+        <path id="scene-line" d="" fill="none" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div class="scene-fish" id="scene-fish" aria-hidden="true">
+        <svg viewBox="0 0 120 56" focusable="false">
+          <path d="M14 28c14-18 44-18 62 0-18 18-48 18-62 0z" fill="currentColor" opacity="0.85"/>
+          <path d="M76 28l26-18v36z" fill="currentColor" opacity="0.85"/>
+          <circle cx="34" cy="23" r="3.4" fill="#0a1620"/>
+          <path d="M58 12c6 4 6 28 0 32" fill="none" stroke="#0a1620" stroke-width="2.4" opacity="0.55"/>
+        </svg>
+      </div>
+
+      <span class="scene-depth" id="scene-depth" aria-hidden="true">浅滩 Lv.0</span>
+
       <div class="scene-status">
         <p class="phase" id="phase-text">准备下竿</p>
         <p class="phase-sub" id="phase-sub"></p>
@@ -62,14 +78,17 @@
     </div>
 
     <div class="reel-panel" id="reel-panel" hidden>
-      <p class="reel-hint" data-i18n="reel_hint">标记进入绿区时点击收线</p>
+      <p class="reel-hint">
+        <span data-i18n="reel_hint">标记进入绿区时点击收线</span>
+        <span class="reel-combo" id="reel-combo"></span>
+      </p>
       <div class="reel-body">
         <div class="timing-track" id="timing-track" aria-hidden="true">
           <div class="sweet-zone" id="sweet-zone"></div>
           <div class="timing-marker" id="timing-marker"></div>
         </div>
         <div class="tension">
-          <p class="tension-label" data-i18n="reel_tension">线的拉力</p>
+          <p class="tension-label" id="tension-label" data-i18n="reel_tension">线的拉力</p>
           <div class="tension-track">
             <div class="tension-fill" id="tension-fill"></div>
           </div>
@@ -100,6 +119,9 @@
       <div class="stat"><dt data-i18n="stat_best">最大</dt><dd id="stat-best">0</dd></div>
       <div class="stat"><dt data-i18n="stat_depth">水层</dt><dd id="stat-depth">浅滩</dd></div>
       <div class="stat"><dt data-i18n="stat_pity">保底</dt><dd id="stat-pity">0/10</dd></div>
+      <div class="stat"><dt data-i18n="stat_casts">抛竿</dt><dd id="stat-casts">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_misses">失手</dt><dd id="stat-misses">0</dd></div>
+      <div class="stat"><dt data-i18n="stat_escapes">断线</dt><dd id="stat-escapes">0</dd></div>
     </dl>
   </section>
 

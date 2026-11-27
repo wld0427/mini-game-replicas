@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | ✅ 已过 | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
 | 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底（跨日累计） | `games/element-forge/` | ✅ 46/46 | ✅ 9/9 | ✅ | ✅ 已过 | https://zr6vv3h2bn8e3.space.mcode.cn | 已交付 |
-| 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://sw066j4tihcyh.space.mcode.cn | 已交付 |
+| 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 7/7 | ✅ | ✅ 已过 | https://3kvg1airu5chk.space.mcode.cn | 已交付 |
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
 | 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://5bqw3wzkboaey.space.mcode.cn | 已交付 |
@@ -24,7 +24,7 @@
 | --- | --- | --- | --- | --- | --- |
 | kanji-rush | 23 | 12 | 15 | ✅ | ✅ 已过（含 14 项缺陷修复） |
 | element-forge | 46 | 9 | 19 | ✅ | ✅ 已过（含 4 处结构性空洞修复） |
-| angler-almanac | 43 | 2 | 0 | ✗ | ⏳ 待修（审计报告已就绪） |
+| angler-almanac | 43 | 7 | 16 | ✅ | ✅ 已过（审计 9 项缺陷 + 4 项盲区全修，含起竿窗口判负） |
 | tetra-cascade | 39 | 3 | 0 | ✗ | ⏳ 待修（**审计报告缺失，需先补审计**） |
 | ball-foundry | 39 | 2 | 0 | ✗ | ⏳ 待修（**审计报告缺失，需先补审计**） |
 | townscript | 36 | 3 | 0 | ✗ | ⏳ 待修（审计报告已就绪） |
@@ -44,7 +44,7 @@
 | --- | --- | --- | --- |
 | kanji-rush | ✅ 已补齐（proposal/design/plan/acceptance） | 已补：F-011 音效无测试、图鉴格子数无断言、自动模式无测试；已修 toast 遮挡统计栏与移动端语言按钮断字 | ✅ 已过 |
 | element-forge | ✅ 已补齐（proposal/design/plan/acceptance，19 项 F-ID） | 已修：F-015 每日灵感产物卡渲染成 `配方: undefined + undefined`、F-010 配方手册是死文本（README 承诺「方便复现」但条目点不动）、F-016 搜索无结果与「还没发现任何元素」共用同一句提示；已补 `composeImprovised` / `computeGenerations` / `morphemesFor` / `describeElement` / `computeStats` 五个零覆盖逻辑函数的行为断言；已修视觉：雾家族 4 元素共用 🌫️ 渲染成无特征白块、桌面左栏比右栏短约 900px 留白、toast 压住移动端原料槽。**门禁全绿后又被另一会话的审计报告 (`docs/audit/element-forge.md`) 查出 4 处结构性空洞，已全部修掉**：每日保底跨日清零导致**永远攒不到阈值**（每日上限 5 < 阈值 12，旧逻辑 365 天 pity 最高仅 5）、拖拽入槽是死代码（chip 是 `<button>` 默认不可拖）、`chain_hint` 文案从未渲染、搜索查不到未发现词条 | ✅ 已过 |
-| angler-almanac | ❌ 全缺 | **已审计**（`docs/audit/angler-almanac.md`，测试 45/45 全绿但游戏有洞）：**P0** 起竿窗口超时判负根本不存在（`onHookTimeout` 死代码）→ 卷线器升级零作用、失误统计恒为 0、"抢时机"玩法核心被架空；饵 Lv.5 显示 `undefined Lv.5`；断线后产物卡仍完整显示鱼种名 | ⏳ 待修复 |
+| angler-almanac | ✅ 已补齐（proposal/design/plan/acceptance，16 项 F-ID） | **已审计并修完**（`docs/audit/angler-almanac.md`，审计时测试 45/45 全绿但游戏有洞）：**P0** 起竿窗口超时判负根本不存在（`onHookTimeout` 死代码）→ 卷线器升级零作用、失误统计恒为 0、"抢时机"玩法核心被架空。**本轮已修 9 项缺陷**：起竿窗口判负（`hookWindowOpen` 纯函数 + 超时定时器 + `doHook` 兜底）、饵 Lv.5 显示 `undefined Lv.5`、饵文案「等待更久」与实现相反、幸运漏加权稀有档（文案说稀有但 `LUCK` 无 `r`）、断线后产物卡仍剧透鱼种体长、跳过链接未国际化、遛鱼命中无视觉反馈、投竿/失手/断线统计 UI 从不展示、卷线器零作用；**另修 3 处打磨**：张力条填充条与轨道两套红打架、同屏重复提示、场景信息密度过低。**补 4 项测试盲区**（超时路径零覆盖、卷线器只测纯函数、失败结算无断言、bait Lv.5 无覆盖），并新增 5 条端到端用例 | ✅ 已过 |
 | tetra-cascade | ❌ 全缺 | **待审计**（审计 agent 曾因 Token Plan 额度耗尽中断，未产出报告）：踢墙表是否完整、锁定延迟续命次数、暂存交换限制、7-bag 表述是否与实现一致。→ **本轮先做审计，再按报告修** | ⏳ 待修复 |
 | ball-foundry | ❌ 全缺 | **待审计**（同上，审计报告缺失）：7 种材质手感是否真的可区分、堆叠结算、升级曲线。审计时曾观察到「投放 26 个球但只有 1 个落定」的现象，疑似物理结算有洞，需重点查 | ⏳ 待修复 |
 | townscript | ❌ 全缺 | 待审计：10 种地标约束是否全部可达、右键拆除、城镇代码往返 | ⏳ 待修复 |
@@ -137,6 +137,10 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 ## 候选池（下一轮可做）
 
 > 定时任务每轮从这里挑一个未被做过的候选；做完后移入上方项目清单。
+>
+> **选品来源升级（2026-11-27）**：新增 `docs/research/opengame-catalog.tsv` ——
+> 277 款**已商业验证**的玩法机制（中文标题 / 描述 / 体裁 / 朝向 / 操控说明 / 变现标签）。
+> 候选池从"随机搜网"改为"查表"。调研报告见 `docs/research/opengame.md`。
 
 | 候选 | 上游 | 玩法内核 | 备注 |
 | --- | --- | --- | --- |
@@ -145,6 +149,26 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 | 星球折叠 | fold 类 | 折纸网格判定覆盖 | 算法可测 |
 | 反应力测试 | 反应测试类 | 点击变色计分，防作弊 | |
 | 2048 变体 | 2048 | 加同色合并/网格锁 | |
+
+### 从 opengame 选品目录筛出的候选（`docs/research/opengame-catalog.tsv`）
+
+> 以下是**进入立项评审的候选**，不是开工名单。开工仍需走 `docs/process/` 四道门禁。
+> 筛选条件：纯 2D、逻辑可单测、与已有 6 款不重复、中文市场已验证。
+
+| slug | 中文名 | 引擎 | 一句话机制 |
+| --- | --- | --- | --- |
+| `unbolt-screw-51` | 拆螺丝 51 关 | puzzle-pressure | 拧松螺丝让废料掉落，目标板不能碰 |
+| `hanzi-brain-spot` | 汉字脑洞找茬 | puzzle-pressure | 拆字/找视觉双关，抖音全民爆火 |
+| `idiom-chain-pro` | 经典成语接龙 | progression-rng | 首尾相连填词，题库层层解锁 |
+| `bottle-fill-puzzle` | 烧脑挑战装满瓶子 | puzzle-pressure | 尺寸匹配的物理投放与收纳 |
+| `pin-rescue` | 熔金拔针 | skill-flow | 拔针改变物理路径，水与熔岩混合成石 |
+| `meme-spotter-king` | 玩梗找茬王 30 关 | puzzle-pressure | 点击拖拽道具触发隐藏剧情 |
+| `merge-to-ten` | 数字合成十 | strategy-combo | 相同数字相邻即合并，规划空间 |
+| `one-stroke-dots` | 一笔画连点成线 | puzzle-pressure | 不回头不重复一笔点完所有格 |
+| `happy-glass-draw` | 欢乐水杯画线 | skill-flow | 自由画线搭导流槽，星评级 |
+| `cut-the-rope-mini` | 割绳子 | skill-flow | 算准摆动时机切断绳索 |
+| `catch-piggy` | 抓小猪：全堆里揪三只 | skill-flow | 倒计时内翻找三个同款配对 |
+| `goods-sort-master` | 货柜消除大师 | strategy-combo | 多层货架挪动凑三消 |
 
 > 已完成并移出候选池：
 > - 单词合成器 → `games/element-forge/`（Element Forge 元素熔炉）。把「AI 兜底造词」换成
@@ -185,9 +209,17 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 ## 每轮执行清单
 
 1. 读取本文件，确认上一轮是否收尾；若有 `开发中` 条目，**接着做**而不是开新坑
-2. 检索网络上的有趣小游戏，选定一个候选（避开已完成的）
-3. 在 `games/<slug>/` 实现原创版本：逻辑层 + 表现层 + 样式 + 多语言 + 音效
-4. 写单元测试（核心规则，确定性）与 Playwright 冒烟测试（真实浏览器）
-5. 跑 `node scripts/review.mjs` 与 `node scripts/run-tests.mjs`，**全部通过**才算完成
-6. 有失败 → 修复后重跑；连续修不好 → 在本文件记「阻塞原因」，换下一个候选
-7. 通过后：提交 git、推送 GitHub、部署到公网、回填本文件
+2. **阶段 A 未完成前不开新游戏**：存量 6 款里还有 3 款（townscript / tetra-cascade / ball-foundry）
+   没过门禁，其中 tetra-cascade 与 ball-foundry **连审计报告都还没有**，必须先补审计再修。
+3. 选候选：优先查 `docs/research/opengame-catalog.tsv`（277 款已验证玩法机制）
+4. **先做立项评审**（`docs/proposal.md`）：核心循环引擎 / 独特钩子（Signature Twist + Peak Moment）/
+   参考调研，三节缺一不可，`node scripts/design-review.mjs` 必须过
+5. 再做功能设计文档（`docs/design.md`，含 **16 项左右的功能清单 + 难度契约**）与开发计划（`docs/plan.md`）
+6. 在 `games/<slug>/` 实现原创版本：逻辑层（`src/logic.js`，不碰浏览器 API）+ 表现层 + 样式 + 多语言 + 音效
+7. 写单元测试（核心规则，确定性）与 Playwright 冒烟测试（真实浏览器），
+   每条功能在代码与测试里分别留 `@feature F-xxx` / `@covers F-xxx` 标记
+8. 跑 `node scripts/gate.mjs` —— **全部通过**才算完成；有失败 → 修复后重跑
+9. 通过后：部署到公网 → 回填本文件 → 提交 git → 推送 GitHub
+
+> **审计报告要写 P0/P1/P2 分级**（见 `docs/process/README.md` 第 ⑥ 节），
+> 同一核心循环连续两轮出 P0 就换机制，不要一直调参数。

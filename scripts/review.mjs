@@ -172,6 +172,23 @@ async function reviewHtml(file) {
   for (const url of externals) {
     add(file, 0, 'external-dep', `引用了外部资源（应自包含或注明授权）: ${url}`);
   }
+
+  // 零 starter 残留：脚手架的默认标题、占位文案、空引用一旦漏进交付物，
+  // 玩家一眼就能看出是半成品。这类问题机器最容易查，也最不该出现。
+  const residue = [
+    [/\bTODO\b/, '残留 TODO 标记'],
+    [/\bFIXME\b/, '残留 FIXME 标记'],
+    [/\blorem\s+ipsum\b/i, '残留 lorem ipsum 占位文案'],
+    [/\b(?:your\s+)?(?:game|title)\s+here\b/i, '残留脚手架默认标题'],
+    [/(?:src|href)=["']\s*["']/, '存在空资源引用（src="" / href=""）'],
+  ];
+  for (const [re, msg] of residue) {
+    const m = re.exec(text);
+    if (m) {
+      const lineNo = text.slice(0, m.index).split('\n').length;
+      add(file, lineNo, 'starter-residue', msg);
+    }
+  }
 }
 
 /* ── 主流程 ───────────────────────────────────────── */

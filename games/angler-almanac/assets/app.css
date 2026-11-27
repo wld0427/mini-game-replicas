@@ -21,6 +21,12 @@
   --hook: #ffd166;
   --danger: #ff6b6b;
   --good: #6ee7a8;
+  --warn: #ffd166;
+
+  /* 张力分区色：与 src/logic.js 的 TENSION_ZONE 同源 */
+  --zone-safe: #6ee7a8;
+  --zone-warn: #ffd166;
+  --zone-danger: #ff6b6b;
 
   --radius: 14px;
   --radius-sm: 10px;
@@ -268,6 +274,58 @@ button { font: inherit; color: inherit; }
 .phase { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em; }
 .phase-sub { font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
 
+/* ── 场景内的鱼影 / 钓线 / 水层徽标 ───────────────────
+   之前整个水面只有一个浮标，操作信息全挤在下方竖条 + 张力条里，
+   宽屏上信息密度几乎为零。现在把张力画进场景里。 */
+
+.scene-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+#scene-line {
+  stroke: var(--zone-safe);
+  stroke-width: 2.5;
+  opacity: 0.85;
+  transition: stroke 0.2s ease;
+}
+#scene-line[data-zone="warn"] { stroke: var(--zone-warn); }
+#scene-line[data-zone="danger"] { stroke: var(--zone-danger); }
+
+.scene-fish {
+  position: absolute;
+  /* 与 assets/app.js 的 SCENE.fishY 一致：viewBox 252/300 = 84%，
+     让鱼潜在水下而不是骑在水面上 */
+  top: 84%;
+  width: clamp(44px, 8%, 76px);
+  /* 横向 -11.7% 让鱼嘴（SVG 内 x=14/120）正落在 left 锚点上，
+     于是钓线看起来是"咬住鱼嘴"，而不是穿过鱼身 */
+  transform: translate(-11.7%, -50%);
+  color: var(--zone-safe);
+  opacity: 0;
+  pointer-events: none;
+  transition: left 0.1s linear, opacity 0.25s ease, color 0.2s ease;
+}
+.scene-fish svg { width: 100%; height: auto; display: block; }
+.scene-fish[data-zone="warn"] { color: var(--zone-warn); }
+.scene-fish[data-zone="danger"] { color: var(--zone-danger); }
+.scene[data-phase="reel"] .scene-fish { opacity: 1; }
+
+.scene-depth {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: #dff2fb;
+  background: rgba(4, 14, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
 /* ── 操作 ─────────────────────────────────────────── */
 
 .action-bar { display: flex; gap: 0.7rem; justify-content: center; margin-top: 1rem; }
@@ -349,23 +407,36 @@ button { font: inherit; color: inherit; }
 }
 
 .tension { min-width: 0; }
-.tension-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.35rem; }
+.tension-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.35rem; font-variant-numeric: tabular-nums; }
+/* 轨道色带：安全 / 警戒 / 危险，与填充条读同一个分区口径 */
 .tension-track {
   position: relative;
   height: 16px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(110, 231, 168, 0.22) 0%, rgba(110, 231, 168, 0.22) 62%, rgba(255, 107, 107, 0.34) 62%, rgba(255, 107, 107, 0.34) 100%);
+  background: linear-gradient(90deg,
+    rgba(110, 231, 168, 0.22) 0%,
+    rgba(110, 231, 168, 0.22) 55%,
+    rgba(255, 209, 102, 0.24) 55%,
+    rgba(255, 209, 102, 0.24) 80%,
+    rgba(255, 107, 107, 0.34) 80%,
+    rgba(255, 107, 107, 0.34) 100%);
   border: 1px solid var(--line);
   overflow: hidden;
 }
+/* 填充条：**实色**，颜色只取决于当前分区。
+   之前这里铺的是自身宽度上的绿→黄→红渐变，张力 20% 时末端就已经是红的，
+   看上去像「危险」，和轨道自己的危险区互相打架。 */
 .tension-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #6ee7a8, #ffd166 62%, #ff6b6b);
-  transition: width 0.08s linear;
+  background: var(--zone-safe);
+  transition: width 0.08s linear, background 0.15s ease;
 }
+.tension-fill[data-zone="safe"] { background: var(--zone-safe); }
+.tension-fill[data-zone="warn"] { background: var(--zone-warn); }
+.tension-fill[data-zone="danger"] { background: var(--zone-danger); }
 
 /* ── 上鱼卡片 ─────────────────────────────────────── */
 
@@ -595,3 +666,22 @@ button { font: inherit; color: inherit; }
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ── 遛鱼命中反馈（此前完全缺失，玩家只能靠音调猜） ── */
+.timing-marker.is-hit {
+  background: var(--tier-ssr);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tier-ssr) 35%, transparent), 0 0 16px var(--tier-ssr);
+  transform: translate(-50%, -50%) scale(1.25);
+}
+.timing-marker.is-miss {
+  background: var(--tier-ur);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tier-ur) 35%, transparent);
+  transform: translate(-50%, -50%) scale(0.85);
+}
+.reel-combo {
+  margin-left: 8px;
+  font-weight: 700;
+  color: var(--tier-ssr);
+  font-variant-numeric: tabular-nums;
+}
+.reel-combo:empty { display: none; }

@@ -40,6 +40,28 @@ export const REEL = {
   cooldown: 0.22,
 };
 
+/**
+ * 张力分区阈值。**表现层的配色、轨道色带、文案全部读这里**，
+ * 避免「填充条一套颜色、轨道另一套颜色」互相打架。
+ *
+ * - safe   张力低，鱼在往回游 —— 绿色
+ * - warn   张力偏高，还能救 —— 琥珀色
+ * - danger 张力逼近断裂（REEL.maxTension = 100）—— 红色
+ */
+export const TENSION_ZONE = { safe: 55, warn: 80 };
+
+/**
+ * 当前张力属于哪个分区。
+ * @param {number} tension
+ * @returns {'safe'|'warn'|'danger'}
+ */
+/** @feature F-015 张力分区口径 */
+export function tensionZone(tension) {
+  if (tension >= TENSION_ZONE.warn) return 'danger';
+  if (tension >= TENSION_ZONE.safe) return 'warn';
+  return 'safe';
+}
+
 /** 各稀有度在遛鱼阶段的难度：甜区宽度与鱼挣扎频率。 */
 export const REEL_PROFILE = {
   n: { width: 0.30, freq: 0.8 },
@@ -50,7 +72,12 @@ export const REEL_PROFILE = {
 };
 
 /** 幸运（鱼竿等级）对稀有度权重的修正系数。 */
-export const LUCK = { common: 0.28, epic: 0.22, legend: 0.5, mythic: 0.6 };
+/**
+ * 幸运系数。**必须覆盖文案承诺的每一个档位**：
+ * 文案说「稀有档更容易上钩」，所以 r 档必须有系数 —— 之前漏了 r，
+ * 玩家按文案理解会落空（文案已同步改为「稀有及以上」）。
+ */
+export const LUCK = { common: 0.28, rare: 0.24, epic: 0.22, legend: 0.5, mythic: 0.6 };
 
 /* ── 确定性随机 ───────────────────────────────────── */
 
@@ -123,6 +150,7 @@ export function createState() {
 /* ── 装备效果 ─────────────────────────────────────── */
 
 /** 当前水层深度（= 饵等级）。 */
+/** @feature F-011 水层解锁 */
 export function depthOf(state) {
   return state.upgrades.bait;
 }
@@ -165,6 +193,7 @@ export function availableSpecies(state) {
  * @param {GameState} state
  * @returns {Record<string, number>}
  */
+/** @feature F-008 稀有度权重与幸运 */
 export function rarityWeights(state) {
   const luck = luckOf(state);
   const depth = depthOf(state);
@@ -181,6 +210,7 @@ export function rarityWeights(state) {
   }
 
   if (weights.n) weights.n *= 1 / (1 + LUCK.common * luck);
+  if (weights.r) weights.r *= 1 + LUCK.rare * luck;
   if (weights.sr) weights.sr *= 1 + LUCK.epic * luck;
   if (weights.ssr) weights.ssr *= 1 + LUCK.legend * luck;
   if (weights.ur) weights.ur *= 1 + LUCK.mythic * luck;
@@ -263,6 +293,7 @@ export function catchValue(state, species, cm) {
  * @param {() => number} rng
  * @returns {{state: GameState, biteDelay: number, hookWindow: number}}
  */
+/** @feature F-001 抛竿与咬钩等待 */
 export function applyCast(state, rng) {
   const next = {
     ...state,
@@ -278,6 +309,22 @@ export function applyCast(state, rng) {
   const biteDelay = Math.round(Math.max(BITE_DELAY.min, raw));
 
   return { state: next, biteDelay, hookWindow: hookWindow(state) };
+}
+
+/**
+ * 起竿窗口是否仍在有效期内。
+ *
+ * ⚠️ 这一条是玩法的核心：**窗口一过，鱼就跑了**。
+ * 之前的实现里 `onHookTimeout` 从未被调用，倒计时只写进文字不参与判定，
+ * 于是「抢时机」这个核心玩法被架空 —— 迟到 7.5 秒仍能起竿成功。
+ * 现在表现层用本函数做兜底判定，逻辑层提供唯一口径。
+ *
+ * @param {number} deadline 起竿截止时刻（performance.now() 口径，毫秒）
+ * @param {number} now 当前时刻（同一口径）
+ */
+/** @feature F-002 起竿窗口与超时判负 */
+export function hookWindowOpen(deadline, now) {
+  return now <= deadline;
 }
 
 /**
@@ -297,6 +344,7 @@ export function hookWindow(state) {
  * @param {() => number} rng
  * @returns {{species: object, tier: string, cm: number, value: number, pityTriggered: boolean}}
  */
+/** @feature F-009 保底机制 */
 export function rollCatch(state, rng) {
   const target = deepestTier(state);
   const pityTriggered = state.pity >= PITY_LIMIT;
@@ -317,6 +365,7 @@ export function rollCatch(state, rng) {
  * @param {GameState} state
  * @param {'miss'|'escape'} kind
  */
+/** @feature F-006 失败结算 */
 export function applyLoss(state, kind) {
   const next = {
     ...state,
@@ -335,6 +384,7 @@ export function applyLoss(state, kind) {
  * @param {object} species
  * @param {() => number} rng
  */
+/** @feature F-003 起竿进入遛鱼 */
 export function startReel(species, rng) {
   const profile = REEL_PROFILE[species.tier] || REEL_PROFILE.n;
   return {
@@ -348,6 +398,7 @@ export function startReel(species, rng) {
     cooldown: 0,
     pulls: 0,
     good: 0,
+    lastHit: null,
     landed: false,
     snapped: false,
   };
@@ -384,6 +435,7 @@ export function reelMarkerInfo(reel) {
  * @param {number} dt 秒
  * @returns {object} 新的 reel 状态
  */
+/** @feature F-004 遛鱼甜区判定与张力 */
 export function stepReel(reel, input, dt) {
   const next = { ...reel, elapsed: reel.elapsed + dt };
   next.cooldown = Math.max(0, reel.cooldown - dt);
@@ -394,6 +446,8 @@ export function stepReel(reel, input, dt) {
     const inZone = Math.abs(marker - next.sweetCenter) <= next.sweetWidth / 2;
     next.cooldown = REEL.cooldown;
     next.pulls += 1;
+    // 记录本次点击的判定结果，表现层据此给命中/失误反馈
+    next.lastHit = inZone ? 'good' : 'miss';
     if (inZone) {
       next.tension -= REEL.good;
       next.good += 1;
@@ -418,6 +472,7 @@ export function stepReel(reel, input, dt) {
  * @param {number} value
  * @returns {{state: GameState, result: object}}
  */
+/** @feature F-006 上钩结算 F-007 鱼种图鉴 */
 export function landCatch(state, species, cm, value) {
   const next = {
     ...state,
@@ -475,6 +530,7 @@ export function upgradeCost(kind, level) {
  * @param {string} kind
  * @returns {{state: GameState, result: object}|null}
  */
+/** @feature F-010 装备升级 */
 export function applyUpgrade(state, kind) {
   const def = UPGRADES[kind];
   if (!def) return null;
@@ -532,6 +588,7 @@ export function hasBigCatch(state) {
  * 检查并解锁成就，返回本次新解锁的成就列表。
  * @param {GameState} state 会被就地更新的状态对象
  */
+/** @feature F-012 成就系统 */
 export function updateAchievements(state) {
   const unlocked = [];
   for (const ach of ACHIEVEMENTS) {
@@ -552,6 +609,7 @@ export function distinctCount(state) {
 }
 
 /** 统计面板数据。 */
+/** @feature F-016 统计面板数据 */
 export function computeStats(state) {
   return {
     coins: state.coins,
@@ -577,6 +635,7 @@ export function computeStats(state) {
 /* ── 存档 ─────────────────────────────────────────── */
 
 /** 把状态安全地序列化。 */
+/** @feature F-013 本地存档 */
 export function serializeState(state) {
   return JSON.stringify({
     version: state.version,

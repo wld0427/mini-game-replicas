@@ -16,6 +16,7 @@ import {
   computeStats,
   createState,
   deserializeState,
+  hookWindowOpen,
   landCatch,
   mulberry32,
   reelMarkerInfo,
@@ -23,6 +24,7 @@ import {
   serializeState,
   startReel,
   stepReel,
+  tensionZone,
   upgradeCost,
 } from '../src/logic.js';
 
@@ -56,6 +58,14 @@ const dom = {
   statBest: el('stat-best'),
   statDepth: el('stat-depth'),
   statPity: el('stat-pity'),
+  statCasts: el('stat-casts'),
+  statMisses: el('stat-misses'),
+  statEscapes: el('stat-escapes'),
+  reelCombo: el('reel-combo'),
+  tensionLabel: el('tension-label'),
+  sceneFish: el('scene-fish'),
+  sceneLine: el('scene-line'),
+  sceneDepth: el('scene-depth'),
   shop: el('shop'),
   dex: el('dex'),
   dexMeta: el('dex-meta'),
@@ -81,6 +91,7 @@ let audioCtx = null;
 
 /* ── 存储 ─────────────────────────────────────────── */
 
+/** @feature F-013 本地存档 */
 function readStorage() {
   try {
     return window.localStorage.getItem(STORAGE_KEY);
@@ -218,6 +229,7 @@ function fishSvg(species) {
 
 /* ── 渲染 ─────────────────────────────────────────── */
 
+/** @feature F-014 三语切换 */
 function renderStatic() {
   const s = getStrings(lang);
   dom.subtitle.textContent = s.subtitle;
@@ -229,6 +241,31 @@ function renderStatic() {
   dom.langSwitch.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.classList.toggle('is-active', btn.dataset.lang === lang);
   });
+}
+
+/**
+ * 遛鱼阶段的实时状态文案（场景状态区与张力标签共用同一口径）。
+ *
+ * - 场景状态区给**定性**提示（该加速收线还是快断线）
+ * - 遛鱼面板的张力标签给**定量**读数（拉力百分比）
+ * 两处各司其职，不再像之前那样同屏重复同一句话。
+ *
+ * @param {'safe'|'warn'|'danger'} [zone]
+ * @returns {string}
+ */
+function reelStatusText(zone = reel ? tensionZone(reel.tension) : 'safe') {
+  const s = getStrings(lang);
+  return s[`tension_${zone}`];
+}
+
+/**
+ * 遛鱼面板里张力条的定量读数。
+ * @returns {string}
+ */
+function reelTensionText() {
+  const s = getStrings(lang);
+  const tension = reel ? Math.max(0, Math.min(100, reel.tension)) : 0;
+  return `${s.reel_tension} ${Math.round(tension)}%`;
 }
 
 function renderPhase() {
@@ -243,7 +280,9 @@ function renderPhase() {
     text = s.phase_bite;
   } else if (phase === 'reel') {
     text = s.phase_reel;
-    sub = s.reel_hint;
+    // 之前这里和遛鱼面板顶部写的是同一句「标记进入绿区时点击收线」，
+    // 同一屏重复两遍。现在场景区给定性提示，面板顶部保留操作提示。
+    sub = reel ? reelStatusText() : s.reel_hint;
   } else if (phase === 'result') {
     if (lastResult && lastResult.caught) text = s.phase_landed;
     else if (lastResult && lastResult.snapped) text = s.phase_snapped;
@@ -252,8 +291,12 @@ function renderPhase() {
 
   dom.phaseText.textContent = text;
   dom.phaseSub.textContent = sub;
+  if (dom.sceneDepth) {
+    dom.sceneDepth.textContent = `${s.depth_name[stats.depth]} Lv.${stats.depth}`;
+  }
 }
 
+/** @feature F-016 统计面板 */
 function renderStats() {
   const s = getStrings(lang);
   const stats = computeStats(state);
@@ -263,8 +306,12 @@ function renderStats() {
   dom.statBest.textContent = stats.bestCm > 0 ? `${stats.bestCm}cm` : '—';
   dom.statDepth.textContent = `${s.depth_name[stats.depth]} Lv.${stats.depth}`;
   dom.statPity.textContent = `${stats.pity}/${stats.pityLimit}`;
+  if (dom.statCasts) dom.statCasts.textContent = String(stats.casts);
+  if (dom.statMisses) dom.statMisses.textContent = String(stats.misses);
+  if (dom.statEscapes) dom.statEscapes.textContent = String(stats.escapes);
 }
 
+/** @feature F-010 装备升级 */
 function renderShop() {
   const s = getStrings(lang);
   dom.shop.innerHTML = '';
@@ -302,6 +349,7 @@ function renderShop() {
   }
 }
 
+/** @feature F-007 鱼种图鉴 */
 function renderDex() {
   const s = getStrings(lang);
   dom.dex.innerHTML = '';
@@ -340,6 +388,7 @@ function renderDex() {
   dom.dexMeta.textContent = `${stats.distinct}/${stats.totalSpecies}`;
 }
 
+/** @feature F-012 成就系统 */
 function renderAchievements() {
   dom.achievements.innerHTML = '';
   for (const ach of ACHIEVEMENTS) {
@@ -361,6 +410,7 @@ function renderAchievements() {
   }
 }
 
+/** @feature F-006 上钩结算与失败呈现 */
 function renderCatch() {
   const s = getStrings(lang);
   if (!lastResult) {
@@ -375,10 +425,12 @@ function renderCatch() {
   dom.catchCard.hidden = false;
   dom.catchCard.dataset.tier = species.tier;
   dom.catchCard.style.setProperty('--tier', `var(--tier-${species.tier})`);
-  dom.catchArt.innerHTML = fishSvg(species);
-  dom.catchName.textContent = speciesName(species, lang);
-  dom.catchTier.textContent = s.tier[species.tier];
-  dom.catchSize.textContent = `${lastResult.cm} cm`;
+  // 失败时隐藏鱼种与体长：既不剧透，也不让玩家误以为钓到了
+  const escaped = !lastResult.caught;
+  dom.catchArt.innerHTML = escaped ? '' : fishSvg(species);
+  dom.catchName.textContent = escaped ? s.escaped_name : speciesName(species, lang);
+  dom.catchTier.textContent = escaped ? '' : s.tier[species.tier];
+  dom.catchSize.textContent = escaped ? s.escaped_size : `${lastResult.cm} cm`;
   dom.catchNew.hidden = !(lastResult.caught && lastResult.isNew);
   dom.catchNew.textContent = s.new_badge;
   dom.catchBig.hidden = !(lastResult.caught && lastResult.isBig);
@@ -386,19 +438,88 @@ function renderCatch() {
   dom.catchCoins.textContent = lastResult.caught ? `+${lastResult.value}` : '';
 }
 
+/* ── 场景内的鱼影与钓线 ─────────────────────────────── */
+
+/**
+ * 场景坐标系常量（对应 index.html 里 overlay SVG 的 viewBox 0 0 1000 300）。
+ * 浮标锚点 / 鱼的落点都写死在这里，改布局时只改这一处。
+ */
+const SCENE = {
+  bobberX: 500,
+  bobberY: 222,
+  fishY: 252,
+  fishNearX: 560,
+  fishSpanX: 330,
+};
+
+/**
+ * 把张力画成「鱼在往哪跑」：张力越高，鱼游得离船越远，钓线越绷。
+ *
+ * 之前整个水面只有一个浮标，宽屏上信息密度几乎为零；
+ * 现在鱼影 + 钓线 + 配色把张力条翻译成了可看的画面。
+ *
+ * @param {'safe'|'warn'|'danger'} zone
+ * @param {number} tension 0–100
+ */
+/** @feature F-015 张力分区配色与场景鱼影 */
+function renderSceneFight(zone, tension) {
+  if (!dom.sceneFish || !dom.sceneLine) return;
+  const ratio = Math.max(0, Math.min(100, tension)) / 100;
+  const fishX = SCENE.fishNearX + SCENE.fishSpanX * ratio;
+
+  dom.sceneFish.style.left = `${(fishX / 1000) * 100}%`;
+  dom.sceneFish.dataset.zone = zone;
+
+  // 二次贝塞尔：中点下垂，张力越高线越直（越绷）
+  const sag = 46 * (1 - ratio);
+  const cx = (SCENE.bobberX + fishX) / 2;
+  const cy = (SCENE.bobberY + SCENE.fishY) / 2 + sag;
+  dom.sceneLine.setAttribute(
+    'd',
+    `M ${SCENE.bobberX} ${SCENE.bobberY} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${fishX.toFixed(1)} ${SCENE.fishY}`,
+  );
+  dom.sceneLine.dataset.zone = zone;
+}
+
+/** @feature F-004 遛鱼张力 F-005 命中反馈 */
 function renderReel() {
   if (phase !== 'reel' || !reel) return;
+  const s = getStrings(lang);
   const center = reel.sweetCenter * 100;
   const width = reel.sweetWidth * 100;
   dom.sweetZone.style.top = `${center - width / 2}%`;
   dom.sweetZone.style.height = `${width}%`;
   const info = reelMarkerInfo(reel);
   dom.timingMarker.style.top = `${info.value * 100}%`;
-  dom.tensionFill.style.width = `${Math.max(0, Math.min(100, reel.tension))}%`;
+  const tension = Math.max(0, Math.min(100, reel.tension));
+  dom.tensionFill.style.width = `${tension}%`;
   dom.reelPanel.dataset.marker = info.value.toFixed(4);
   dom.reelPanel.dataset.sweet = reel.sweetCenter.toFixed(4);
   dom.reelPanel.dataset.width = reel.sweetWidth.toFixed(4);
   dom.reelPanel.dataset.tension = reel.tension.toFixed(2);
+
+  // 张力配色：**填充条与轨道色带读同一个分区口径**（src/logic.js 的 tensionZone）。
+  // 之前填充条把绿→黄→红渐变铺在自身宽度上，张力只有 20% 时末端就已经是红的，
+  // 看上去像「危险」，和轨道自己的 62% 危险区互相打架。
+  const zone = tensionZone(reel.tension);
+  dom.tensionFill.dataset.zone = zone;
+  dom.reelPanel.dataset.zone = zone;
+  if (dom.tensionLabel) {
+    dom.tensionLabel.textContent = reelTensionText();
+  }
+
+  // 场景里的鱼影与钓线：把张力做成看得见的「鱼在往哪跑」。
+  // 之前整个水面场景只有一个浮标，1280px 宽屏上信息密度几乎为零。
+  renderSceneFight(zone, tension);
+
+  // 命中反馈：之前 reel.good / reel.pulls 一直在统计，表现层却从不读，
+  // 玩家打中甜区没有任何视觉确认，只能靠音调和张力条方向猜。
+  const hit = reel.lastHit === 'good';
+  dom.timingMarker.classList.toggle('is-hit', hit);
+  dom.timingMarker.classList.toggle('is-miss', reel.lastHit === 'miss');
+  if (dom.reelCombo) {
+    dom.reelCombo.textContent = reel.good > 0 ? `${s.reel_perfect} ×${reel.good}` : '';
+  }
 }
 
 function renderAll() {
@@ -452,12 +573,17 @@ function loop(ts) {
   lastTs = ts;
 
   if (phase === 'bite') {
+    if (!hookWindowOpen(biteDeadline, ts)) {
+      onHookTimeout();
+      return;
+    }
     const left = Math.max(0, biteDeadline - ts);
     dom.phaseSub.textContent = `${(left / 1000).toFixed(1)}s`;
   } else if (phase === 'reel' && reel) {
     reel = stepReel(reel, pendingInput, dt);
     pendingInput = false;
     renderReel();
+    dom.phaseSub.textContent = reelStatusText();
     if (reel.landed) {
       finishReel(true);
       return;
@@ -487,22 +613,40 @@ function doCast() {
   later(() => onBite(rng), biteDelay);
 }
 
+/** @feature F-001 抛竿与咬钩等待 F-002 起竿窗口 */
 function onBite(rng) {
   if (phase !== 'waiting') return;
   pending = rollCatch(state, rng);
-  biteDeadline = performance.now() + computeStats(state).hookWindow;
+  const window = computeStats(state).hookWindow;
+  biteDeadline = performance.now() + window;
   setPhase('bite');
   playBiteSound();
+
+  // 把窗口长度与截止时刻挂到 DOM 上：测试可以据此判定「窗口确实过期了」，
+  // 而不是靠 sleep 猜时间。performance.now() 在页面内与 page.evaluate 同源。
+  dom.scene.dataset.hookWindow = String(window);
+  dom.scene.dataset.hookDeadline = String(biteDeadline);
+
+  // 窗口一到，鱼就跑了 —— 之前这里没有任何超时安排，onHookTimeout 是死代码，
+  // 导致「抢时机」这个核心玩法被架空（迟到 7.5 秒仍能起竿成功）。
+  later(() => onHookTimeout(), window);
 }
 
+/** @feature F-002 超时兜底判定 F-003 起竿进入遛鱼 */
 function doHook() {
   if (phase !== 'bite' || !pending) return;
+  // 兜底：即使超时定时器还没跑，只要窗口已过就算判负
+  if (!hookWindowOpen(biteDeadline, performance.now())) {
+    onHookTimeout();
+    return;
+  }
   clearTimers();
   reel = startReel(pending.species, mulberry32((Date.now() ^ 0x9e3779b9) >>> 0));
   setPhase('reel');
   startLoop();
 }
 
+/** @feature F-002 窗口过期判负 */
 function onHookTimeout() {
   if (phase !== 'bite' || !pending) return;
   state = applyLoss(state, 'miss');

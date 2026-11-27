@@ -28,13 +28,22 @@ const MIN_EDGE_CASES = 3;
 const MIN_POLISH_ITEMS = 3;
 
 const PROPOSAL_SECTIONS = [
-  '一句话定位', '为什么做它', '核心亮点', '独特玩法', '表现力',
-  '差异化', '可测性', '风险与代价', '评分', '结论',
+  '一句话定位', '为什么做它', '核心亮点', '核心循环引擎', '独特钩子', '参考调研',
+  '独特玩法', '表现力', '差异化', '可测性', '风险与代价', '评分', '结论',
 ];
 
 const DESIGN_SECTIONS = [
   '一句话定位', '核心玩法循环', '状态机', '数据结构',
-  '功能清单', '边界与异常', '交互流程', '打磨清单',
+  '功能清单', '难度契约', '边界与异常', '交互流程', '打磨清单',
+];
+
+/** 五个核心循环引擎之一。立项评审必须锁定类型，防止"什么都是一点"的平庸设计。 */
+const CORE_LOOPS = [
+  'puzzle-pressure',
+  'strategy-combo',
+  'skill-flow',
+  'progression-rng',
+  'sandbox-explore',
 ];
 
 const SCORE_DIMS = [
@@ -128,6 +137,37 @@ async function reviewProposal(text, problems) {
   if (/放弃/.test(concl)) {
     problems.push('proposal.md 结论为「放弃」，该选题应退回候选池，不进入开发');
   }
+
+  // 核心循环引擎：必须锁定到五类之一
+  const loopBody = substantive(sections.get('核心循环引擎') || '');
+  const hitLoops = CORE_LOOPS.filter((id) => loopBody.includes(id));
+  if (hitLoops.length === 0) {
+    problems.push(
+      `proposal.md「核心循环引擎」必须锁定到下列之一：${CORE_LOOPS.join(' / ')}`,
+    );
+  } else if (hitLoops.length > 2) {
+    problems.push(
+      `proposal.md「核心循环引擎」最多选 1 主 1 辅，实际出现 ${hitLoops.length} 个：${hitLoops.join(', ')}`,
+    );
+  }
+
+  // 独特钩子：Signature Twist 与 Peak Moment 都要有
+  const hookBody = sections.get('独特钩子') || '';
+  if (!/Signature\s*Twist/i.test(hookBody)) {
+    problems.push('proposal.md「独特钩子」必须写明 Signature Twist（签名钩子）');
+  }
+  if (!/Peak\s*Moment/i.test(hookBody)) {
+    problems.push('proposal.md「独特钩子」必须写明 Peak Moment（峰值时刻）');
+  }
+
+  // 参考调研：核心循环与空间布局两项是底线
+  const refBody = substantive(sections.get('参考调研') || '');
+  if (!/核心循环|签名张力/.test(refBody)) {
+    problems.push('proposal.md「参考调研」必须覆盖参考游戏的核心循环与签名张力');
+  }
+  if (!/空间|布局|信息可见/.test(refBody)) {
+    problems.push('proposal.md「参考调研」必须覆盖参考游戏的空间布局与信息可见性规则');
+  }
 }
 
 async function reviewDesign(text, problems) {
@@ -173,6 +213,18 @@ async function reviewDesign(text, problems) {
   const polishRows = tableRows(sections.get('打磨清单') || '').filter((l) => /^\|\s*[^|\s]+\s*\|/.test(l));
   if (polishRows.length < MIN_POLISH_ITEMS) {
     problems.push(`design.md「打磨清单」只有 ${polishRows.length} 条，少于门槛 ${MIN_POLISH_ITEMS} 条`);
+  }
+
+  // 难度契约：三档难度必须分开
+  const contractBody = substantive(sections.get('难度契约') || '');
+  for (const [label, re] of [
+    ['参考路线（会玩的人能通关）', /参考路线/],
+    ['弱化路线（水平一般的人会失败）', /弱化路线/],
+    ['挂机路线（完全不操作会失败）', /挂机路线/],
+  ]) {
+    if (!re.test(contractBody)) {
+      problems.push(`design.md「难度契约」缺少${label}一档`);
+    }
   }
 }
 
