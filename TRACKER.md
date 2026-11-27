@@ -29,8 +29,8 @@
 | kanji-rush | ✅ 已补齐（proposal/design/plan/acceptance） | 已补：F-011 音效无测试、图鉴格子数无断言、自动模式无测试；已修 toast 遮挡统计栏与移动端语言按钮断字 | ✅ 已过 |
 | element-forge | ✅ 已补齐（proposal/design/plan/acceptance，19 项 F-ID） | 已修：F-015 每日灵感产物卡渲染成 `配方: undefined + undefined`、F-010 配方手册是死文本（README 承诺「方便复现」但条目点不动）、F-016 搜索无结果与「还没发现任何元素」共用同一句提示；已补 `composeImprovised` / `computeGenerations` / `morphemesFor` / `describeElement` / `computeStats` 五个零覆盖逻辑函数的行为断言；已修视觉：雾家族 4 元素共用 🌫️ 渲染成无特征白块、桌面左栏比右栏短约 900px 留白、toast 压住移动端原料槽。**门禁全绿后又被另一会话的审计报告 (`docs/audit/element-forge.md`) 查出 4 处结构性空洞，已全部修掉**：每日保底跨日清零导致**永远攒不到阈值**（每日上限 5 < 阈值 12，旧逻辑 365 天 pity 最高仅 5）、拖拽入槽是死代码（chip 是 `<button>` 默认不可拖）、`chain_hint` 文案从未渲染、搜索查不到未发现词条 | ✅ 已过 |
 | angler-almanac | ❌ 全缺 | **已审计**（`docs/audit/angler-almanac.md`，测试 45/45 全绿但游戏有洞）：**P0** 起竿窗口超时判负根本不存在（`onHookTimeout` 死代码）→ 卷线器升级零作用、失误统计恒为 0、"抢时机"玩法核心被架空；饵 Lv.5 显示 `undefined Lv.5`；断线后产物卡仍完整显示鱼种名 | ⏳ 待修复 |
-| tetra-cascade | ❌ 全缺 | 待审计：踢墙表是否完整、锁定延迟续命次数、暂存交换限制、7-bag 表述是否与实现一致 | ⏳ 待修复 |
-| ball-foundry | ❌ 全缺 | 待审计：7 种材质手感是否真的可区分、堆叠结算、升级曲线 | ⏳ 待修复 |
+| tetra-cascade | ❌ 全缺 | **待审计**（审计 agent 曾因 Token Plan 额度耗尽中断，未产出报告）：踢墙表是否完整、锁定延迟续命次数、暂存交换限制、7-bag 表述是否与实现一致。→ **本轮先做审计，再按报告修** | ⏳ 待修复 |
+| ball-foundry | ❌ 全缺 | **待审计**（同上，审计报告缺失）：7 种材质手感是否真的可区分、堆叠结算、升级曲线。审计时曾观察到「投放 26 个球但只有 1 个落定」的现象，疑似物理结算有洞，需重点查 | ⏳ 待修复 |
 | townscript | ❌ 全缺 | 待审计：10 种地标约束是否全部可达、右键拆除、城镇代码往返 | ⏳ 待修复 |
 
 ### 已确认的问题性质（重要）
