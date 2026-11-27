@@ -98,7 +98,7 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 
 | 游戏 | 公网地址 | 部署时间 |
 | --- | --- | --- |
-| Kanji Rush | https://fe84dtppzvcch.space.mcode.cn | 2026-11-25 |
+| Kanji Rush | https://g9b1erxsbe91s.space.mcode.cn | 2026-11-27（14 项缺陷修复后重新部署；前一版 https://fe84dtppzvcch.space.mcode.cn） |
 | Element Forge | https://zr6vv3h2bn8e3.space.mcode.cn | 2026-11-26（门禁修复 + 审计空洞修复后重新部署；前一版 https://glihx7ovioszc.space.mcode.cn，首版 https://h3insrj3ydjpe.space.mcode.cn） |
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
 | Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
