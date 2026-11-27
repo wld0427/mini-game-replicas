@@ -16,7 +16,7 @@
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 7/7 | ✅ | ✅ 已过 | https://3kvg1airu5chk.space.mcode.cn | 已交付 |
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
-| 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 42/42 | ✅ 6/6 | ✅ | ✅ 已过 | https://5bqw3wzkboaey.space.mcode.cn | 已交付 |
+| 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 42/42 | ✅ 6/6 | ✅ | ✅ 已过 | https://p8lzhxknhoedg.space.mcode.cn | 已交付 |
 
 ## 进度快照（2026-11-27）
 
@@ -89,7 +89,11 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 6. `node scripts/gate.mjs games/<slug>` 必须全绿
 7. **过门禁后再按上面的「结构性空洞通用排查法」自审一轮**，并对照 `docs/audit/<slug>.md`（若有）
 
-**下一轮目标**：`angler-almanac`（渔汛录）——门禁待修复清单里的下一款。
+**下一轮目标**：`tetra-cascade`（无尽方块）——门禁待修复清单里的下一款。
+它与 ball-foundry **都还没有审计报告**（审计 agent 曾因 Token Plan 额度耗尽中断），
+所以下一轮的第一件事是**自建审计**（照 townscript 的做法：README 逐条核对 → 源码比对 →
+逻辑层穷举脚本 → Chromium 实证），产出 `docs/audit/tetra-cascade.md` 再进四道门禁。
+已知待查点：踢墙表是否完整、锁定延迟续命次数、暂存交换限制、7-bag 表述是否与实现一致。
 重点审计：多阶段交互链（抛竿 → 咬钩 → 起竿 → 遛鱼）每一环是否真的走得通、有无卡死路径；
 已知待修的 P0：起竿窗口超时判负是死代码（`onHookTimeout` 未接线），
 导致卷线器升级零作用、失误统计恒为 0、"抢时机"玩法核心被架空。
@@ -103,7 +107,7 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
 | Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
 | Ball Foundry | https://rhgu3kwxcpak6.space.mcode.cn | 2026-11-25 |
-| Townscript 城痕 | https://5bqw3wzkboaey.space.mcode.cn | 2026-11-26 |
+| Townscript 城痕 | https://p8lzhxknhoedg.space.mcode.cn | 2026-11-27（门禁 + P0 存档缺陷修复后重新部署；旧地址 https://5bqw3wzkboaey.space.mcode.cn） |
 
 ## GitHub 同步状态
 
@@ -209,8 +213,8 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 ## 每轮执行清单
 
 1. 读取本文件，确认上一轮是否收尾；若有 `开发中` 条目，**接着做**而不是开新坑
-2. **阶段 A 未完成前不开新游戏**：存量 6 款里还有 3 款（townscript / tetra-cascade / ball-foundry）
-   没过门禁，其中 tetra-cascade 与 ball-foundry **连审计报告都还没有**，必须先补审计再修。
+2. **阶段 A 未完成前不开新游戏**：存量 6 款里还有 2 款（tetra-cascade / ball-foundry）
+   没过门禁，且**连审计报告都还没有**，必须先自建审计再修。
 3. 选候选：优先查 `docs/research/opengame-catalog.tsv`（277 款已验证玩法机制）
 4. **先做立项评审**（`docs/proposal.md`）：核心循环引擎 / 独特钩子（Signature Twist + Peak Moment）/
    参考调研，三节缺一不可，`node scripts/design-review.mjs` 必须过
