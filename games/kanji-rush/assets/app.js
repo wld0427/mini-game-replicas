@@ -10,14 +10,19 @@ import {
   ACHIEVEMENTS,
   TIERS,
   TIER_IDS,
+  achievementProgress,
   applyPull,
   computeStats,
   createState,
   currentDelay,
   deserializeState,
+  registerKanjiPool,
   serializeState,
   tierOf,
 } from '../src/logic.js';
+
+// 让逻辑层的收藏白名单知道真实存在的汉字 id
+registerKanjiPool(KANJI);
 
 const STORAGE_KEY = 'kanji-rush-state-v1';
 const LANG_KEY = 'kanji-rush-lang';
@@ -48,6 +53,8 @@ const dom = {
   toast: el('toast'),
   langSwitch: el('lang-switch'),
   subtitle: el('game-subtitle'),
+  tierDist: el('tier-dist'),
+  surgeBadge: el('surge-badge'),
 };
 
 let state = deserializeState(readStorage());
@@ -152,6 +159,7 @@ function renderLegend() {
   }
 }
 
+/** @feature F-015 稀有档演出：翻卡动画与光晕脉冲必须同时存在 */
 function renderCard(result) {
   const s = getStrings(lang);
   const { kanji, tier, isNew } = result;
@@ -172,6 +180,19 @@ function renderCard(result) {
   }
 }
 
+/** @feature F-012 分档分布：让玩家看得见自己抽了多少传说/神话 */
+function renderTierDist() {
+  const s = getStrings(lang);
+  dom.tierDist.innerHTML = '';
+  for (const id of TIER_IDS) {
+    const chip = document.createElement('span');
+    chip.className = 'tier-chip';
+    chip.style.setProperty('--dot', `var(--tier-${id})`);
+    chip.innerHTML = `<span class="tier-name">${s.tier[id]}</span><b>${state.tierCounts[id] || 0}</b>`;
+    dom.tierDist.appendChild(chip);
+  }
+}
+
 function renderStats() {
   const stats = computeStats(state);
   dom.statPulls.textContent = String(stats.pulls);
@@ -179,6 +200,15 @@ function renderStats() {
   dom.statPity.textContent = `${stats.pity}/${stats.pityLimit}`;
   dom.statCombo.textContent = String(stats.combo);
   dom.statTempo.textContent = `${stats.delay}ms`;
+
+  // 加速徽标：命中传说以上后的 5 次窗口内点亮
+  /** @feature F-014 加速状态提示 */
+  if (dom.surgeBadge) {
+    dom.surgeBadge.hidden = state.surge <= 0;
+    dom.surgeBadge.title = getStrings(lang).surge;
+  }
+
+  renderTierDist();
 }
 
 /** @feature F-009 */
@@ -206,6 +236,7 @@ function renderCollection() {
   dom.collectionMeta.textContent = `${distinct} / ${KANJI.length}`;
 }
 
+/** @feature F-013 成就达成条件与进度显示 */
 function renderAchievements() {
   const s = getStrings(lang);
   dom.achievements.innerHTML = '';
@@ -215,8 +246,34 @@ function renderAchievements() {
     const li = document.createElement('li');
     li.className = unlocked ? 'is-unlocked' : '';
     li.dataset.ach = ach.id;
-    const name = lang === 'en' ? ach.en : ach.zh;
-    li.innerHTML = `<span class="ach-icon">${ach.icon}</span><span class="ach-name">${name}</span>`;
+    const name = lang === 'en' ? ach.en : lang === 'ja' ? ach.ja : ach.zh;
+    const desc = ach.desc ? ach.desc[lang] || ach.desc.zh : '';
+    const prog = achievementProgress(ach, state, KANJI);
+
+    const body = document.createElement('span');
+    body.className = 'ach-body';
+    const nameEl = document.createElement('span');
+    nameEl.className = 'ach-name';
+    nameEl.textContent = name;
+    body.appendChild(nameEl);
+    if (desc) {
+      const descEl = document.createElement('span');
+      descEl.className = 'ach-desc';
+      descEl.textContent = desc;
+      body.appendChild(descEl);
+    }
+    const progEl = document.createElement('span');
+    progEl.className = 'ach-progress';
+    progEl.textContent = unlocked ? '✓' : `${prog.cur}/${prog.max}`;
+    body.appendChild(progEl);
+
+    li.innerHTML = '';
+    const icon = document.createElement('span');
+    icon.className = 'ach-icon';
+    icon.textContent = ach.icon;
+    li.appendChild(icon);
+    li.appendChild(body);
+
     const count = document.createElement('span');
     count.className = 'ach-count';
     count.textContent = unlocked ? '✓' : '—';
@@ -287,8 +344,9 @@ function doPull() {
 
   const s = getStrings(lang);
   if (result.unlocked.length > 0) {
-    const ach = result.unlocked[0];
-    showToast(`${s.ach_toast}: ${lang === 'en' ? ach.en : ach.zh}`);
+    // 一次抽取可能同时解锁多个成就，合并成一条提示，避免其余成就静默解锁
+    const names = result.unlocked.map((ach) => (lang === 'en' ? ach.en : lang === 'ja' ? ach.ja : ach.zh));
+    showToast(`${s.ach_toast}: ${names.join(' · ')}`);
   } else if (result.pity) {
     showToast(s.pity_toast);
   }
@@ -328,6 +386,7 @@ function resetAll() {
   dom.cardReading.textContent = '';
   dom.cardMeaning.textContent = '';
   dom.cardBadge.hidden = true;
+  dom.card.classList.remove('is-pulling', 'is-fever');
   renderAll();
 }
 
@@ -360,6 +419,8 @@ document.addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
   if (event.code === 'Space') {
     event.preventDefault();
+    // 自动模式下定时器已经在抽，空格不再叠加，避免实际节奏与显示的间隔对不上
+    if (autoOn) return;
     ensureAudio();
     doPull();
   } else if (event.key === 'a' || event.key === 'A') {
