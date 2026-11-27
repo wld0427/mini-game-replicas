@@ -161,6 +161,27 @@ button { font: inherit; color: inherit; }
 
 .map-wrap, .side { min-width: 0; }
 .side { display: grid; gap: clamp(0.8rem, 2vw, 1rem); }
+.layout > * { min-width: 0; }
+
+/* 桌面端：把「成就」挪到左栏（地图 + 进度同区），右栏留给养成与图鉴。
+   两栏底端因此对齐，不再出现半屏以上的留白。
+   移动端不启用 —— .side 保持普通网格，DOM 顺序不变（工坊 → 图鉴 → 成就 → 记录）。 */
+@media (min-width: 981px) {
+  .side { display: contents; }
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+    grid-template-areas:
+      "map    shop"
+      "map    dex"
+      "ach    dex"
+      "ach    rec";
+  }
+  .map-wrap { grid-area: map; }
+  .panel-shop { grid-area: shop; }
+  .panel-dex { grid-area: dex; }
+  .panel-ach { grid-area: ach; }
+  .panel-rec { grid-area: rec; }
+}
 
 /* ── 工具条 ───────────────────────────────────────── */
 
@@ -215,6 +236,7 @@ button { font: inherit; color: inherit; }
 /* ── 地图 ─────────────────────────────────────────── */
 
 .town-frame {
+  position: relative;
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -370,13 +392,16 @@ button { font: inherit; color: inherit; }
 
 .foot { text-align: center; padding: 1rem 1rem 2rem; }
 
+/* 提示条贴在海面底部：海图是整局唯一在动的区域，提示落在这里既不会挡住
+   调色板 / 模式按钮，也正好落在玩家视线里（早期版本固定在视口顶部居中，
+   正好压住调色板那一排）。 */
 .toast {
-  position: fixed;
-  top: 78px;
+  position: absolute;
+  bottom: 0.7rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 30;
-  max-width: min(92vw, 30rem);
+  z-index: 5;
+  max-width: min(92%, 30rem);
   padding: 0.6rem 1.1rem;
   border-radius: 999px;
   background: rgba(16, 27, 38, 0.96);

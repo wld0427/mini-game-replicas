@@ -106,6 +106,7 @@ export function valueNoise(x, y, seed) {
  * @param {number} expandLevel
  * @returns {object} town
  */
+/** @feature F-001 岛屿生成与确定性：同种子必得同一座岛 */
 export function createTown(seed, expandLevel = 0) {
   const level = Math.min(Math.max(Math.floor(expandLevel || 0), 0), UPGRADES.expand.max);
   const cols = GRID.baseCols + GRID.expandCols * level;
@@ -146,6 +147,7 @@ export function createTown(seed, expandLevel = 0) {
 
   return {
     seed: seed >>> 0,
+    expandLevel: level,
     cols,
     rows,
     heights,
@@ -162,6 +164,7 @@ export function createTown(seed, expandLevel = 0) {
  * @param {string} dateKey
  * @param {number} expandLevel
  */
+/** @feature F-012 每日岛与跨天重置 */
 export function createDailyTown(dateKey, expandLevel = 0) {
   return createTown(dailySeed(dateKey), expandLevel);
 }
@@ -238,6 +241,7 @@ export function cellFacts(town, c, r) {
  * @param {number} c
  * @param {number} r
  */
+/** @feature F-002 上下文规则与十种地标 */
 export function matchLandmarks(town, c, r) {
   if (c < 0 || r < 0 || c >= town.cols || r >= town.rows) return [];
   const f = cellFacts(town, c, r);
@@ -345,6 +349,7 @@ export function countLandmarks(town) {
  * @param {number} r 行
  * @param {number} k 层号（0 = 底层）
  */
+/** @feature F-005 命中检测与渲染同几何 */
 export function blockRect(c, r, k) {
   return {
     x: c * VIEW.cell + k * VIEW.off,
@@ -390,6 +395,7 @@ export function hitTest(town, px, py) {
  * @param {string[]} known 已发现的地标 id
  * @returns {{c: number, r: number, landmark: string}|null}
  */
+/** @feature F-014 勘测提示 */
 export function findHint(town, known) {
   const found = new Set(known || []);
   for (let r = 0; r < town.rows; r += 1) {
@@ -423,6 +429,7 @@ export function findHint(town, known) {
  * @param {number} color
  * @returns {{ok: boolean, changed: boolean, vein: boolean, landmarks: string[], style: string}}
  */
+/** @feature F-003 起楼与叠高 */
 export function placeBlock(town, c, r, color) {
   if (c < 0 || r < 0 || c >= town.cols || r >= town.rows) {
     return { ok: false, changed: false, vein: false, landmarks: [], style: 'plain' };
@@ -448,6 +455,7 @@ export function placeBlock(town, c, r, color) {
  * @param {number} c
  * @param {number} r
  */
+/** @feature F-004 拆除 */
 export function removeBlock(town, c, r) {
   if (c < 0 || r < 0 || c >= town.cols || r >= town.rows) {
     return { ok: false, changed: false, landmarks: [], style: 'plain' };
@@ -478,36 +486,78 @@ export function builtCells(town) {
 /* ── 城镇代码（可分享 / 可还原） ───────────────────── */
 
 /**
- * 把城编码成一段文本：种子 + 高度 + 颜色。
+ * 把城编码成一段文本：种子 + 拓地等级 + 建造/拆除计数 + 高度 + 颜色。
+ *
+ * 拓地等级**必须**进代码：它决定网格尺寸，少了它，解码时按 level 0 建城，
+ * 长度校验必然失败 —— 于是玩家拓地后分享出去的城别人根本还原不了。
+ * 建造/拆除计数同理：少了它，还原一座外来城市后第一次建造会重新触发「初基」里程碑。
+ *
  * @param {object} town
+ * @returns {string}
  */
+/** @feature F-009 城镇代码往返（含拓地等级与建造计数） */
 export function encodeTown(town) {
   const h = town.heights.map((v) => v.toString(36)).join('');
   const c = town.colors.map((v) => v.toString(36)).join('');
-  return `TS1-${town.seed.toString(36)}-${h}-${c}`;
+  const expand = (town.expandLevel || 0).toString(36);
+  const builds = (town.builds || 0).toString(36);
+  const removals = (town.removals || 0).toString(36);
+  return `TS2-${town.seed.toString(36)}-${expand}-${builds}-${removals}-${h}-${c}`;
 }
 
 /**
  * 解码一段城镇代码。非法输入返回 null。
+ *
+ * 兼容两种格式：
+ *   - `TS2-种子-拓地-建造-拆除-高度-颜色`（现行）
+ *   - `TS1-种子-高度-颜色`（旧格式：拓地等级按 0 还原，计数按 0 还原）
+ *
  * @param {string} code
+ * @returns {object|null}
  */
+/** @feature F-010 旧码兼容与非法码处理 */
 export function decodeTown(code) {
   if (typeof code !== 'string') return null;
   const parts = code.trim().split('-');
-  if (parts.length !== 4 || parts[0] !== 'TS1') return null;
-  const seed = parseInt(parts[1], 36);
+  if (parts.length !== 4 && parts.length !== 7) return null;
+
+  let seed36 = null;
+  let expand36 = '0';
+  let builds36 = '0';
+  let removals36 = '0';
+  let heightsPart = null;
+  let colorsPart = null;
+
+  if (parts.length === 4) {
+    if (parts[0] !== 'TS1') return null;
+    [, seed36, heightsPart, colorsPart] = parts;
+  } else {
+    if (parts[0] !== 'TS2') return null;
+    [, seed36, expand36, builds36, removals36, heightsPart, colorsPart] = parts;
+  }
+
+  const seed = parseInt(seed36, 36);
   if (!Number.isFinite(seed)) return null;
-  const town = createTown(seed, 0);
-  if (parts[2].length !== town.heights.length) return null;
-  if (parts[3].length !== town.colors.length) return null;
+  const expandLevel = parseInt(expand36, 36);
+  if (!Number.isFinite(expandLevel) || expandLevel < 0) return null;
+  const builds = parseInt(builds36, 36);
+  if (!Number.isFinite(builds) || builds < 0) return null;
+  const removals = parseInt(removals36, 36);
+  if (!Number.isFinite(removals) || removals < 0) return null;
+
+  const town = createTown(seed, expandLevel);
+  if (heightsPart.length !== town.heights.length) return null;
+  if (colorsPart.length !== town.colors.length) return null;
   for (let i = 0; i < town.heights.length; i += 1) {
-    const h = parseInt(parts[2][i], 36);
-    const c = parseInt(parts[3][i], 36);
+    const h = parseInt(heightsPart[i], 36);
+    const c = parseInt(colorsPart[i], 36);
     if (!Number.isFinite(h) || h < 0 || h > MAX_HEIGHT) return null;
     if (!Number.isFinite(c) || c < 0 || c >= PALETTE.length) return null;
     town.heights[i] = h;
     town.colors[i] = c;
   }
+  town.builds = builds;
+  town.removals = removals;
   return town;
 }
 
@@ -580,6 +630,7 @@ export function dexProgress(profile) {
  * @param {object} event { type: 'build' | 'remove', landmarks: string[], coins, vein, height }
  * @returns {{profile: Profile, unlocked: object[], milestones: object[]}}
  */
+/** @feature F-006 地志图鉴与里程碑 */
 export function applyEvent(profile, event) {
   const dex = {};
   for (const id of LANDMARK_IDS) dex[id] = { ...(profile.dex[id] || { count: 0, firstAt: null }) };
@@ -624,6 +675,7 @@ export function applyEvent(profile, event) {
   for (const ach of ACHIEVEMENTS) {
     if (next.achievements[ach.id]) continue;
     if (ach.test(next)) {
+      /** @feature F-020 成就系统：按进度解锁且只解锁一次 */
       next.achievements[ach.id] = true;
       unlocked.push(ach);
     }
@@ -650,6 +702,7 @@ export function upgradeCost(kind, level) {
  * @param {Profile} profile
  * @param {string} kind
  */
+/** @feature F-008 工坊升级 */
 export function applyUpgrade(profile, kind) {
   const def = UPGRADES[kind];
   if (!def) return null;
@@ -678,11 +731,13 @@ export function applyUpgrade(profile, kind) {
 }
 
 /** 当前解锁的配色数量。 */
+/** @feature F-015 调色板解锁 */
 export function paletteSize(profile) {
   return Math.min(PALETTE.length, BASE_COLORS + (profile.upgrades.palette || 0));
 }
 
 /** 每块地基的基础产出。 */
+/** @feature F-007 铜钱经济（每块地基的基础收入） */
 export function buildIncome(profile) {
   return 1 + (profile.upgrades.income || 0);
 }
@@ -706,6 +761,7 @@ export function serializeProfile(profile) {
  * 从存档字符串恢复档案，任何字段异常都回退到安全默认值。
  * @param {string|null} raw
  */
+/** @feature F-018 存档脏数据回退 */
 export function deserializeProfile(raw) {
   const base = createProfile();
   if (!raw) return base;

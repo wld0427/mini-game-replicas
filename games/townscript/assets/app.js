@@ -36,7 +36,11 @@ import {
 
 const STORAGE_KEY = 'townscript-profile-v1';
 const TOWN_KEY = 'townscript-town-v1';
+const MODE_KEY = 'townscript-mode-v1';
 const LANG_KEY = 'townscript-lang';
+
+/** 每日岛的存档键按日期分开：当天切模式不丢进度，换天自然是新的一座岛。 */
+const dailyTownKey = (dateKey) => `townscript-daily-${dateKey}`;
 
 const el = (id) => document.getElementById(id);
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -72,10 +76,10 @@ const dom = {
 
 let profile = deserializeProfile(readStorage(STORAGE_KEY));
 let lang = detectLang();
+let dailyMode = readStorage(MODE_KEY) === 'daily';
 let town = createTown(pickSeed(), profile.upgrades.expand);
 let currentColor = 0;
 let demolishMode = false;
-let dailyMode = false;
 let hintCell = null;
 let toastTimer = null;
 let audioCtx = null;
@@ -166,6 +170,7 @@ function playThrottled(key, fn) {
   fn();
 }
 
+/** @feature F-017 音效反馈：WebAudio 现场合成，落块声随层数变化 */
 function playBuildSound(height) {
   playThrottled('build', () => tone(180 + height * 40, 0.09, 'triangle', 0.05, 0, (Math.random() - 0.5) * 0.08));
 }
@@ -180,12 +185,27 @@ function playDiscoverySound() {
 
 /* ── 渲染 ─────────────────────────────────────────── */
 
-/** 按深度把海水混成颜色。 */
+/**
+ * 按深度把海水混成颜色。
+ *
+ * 早期版本只有深蓝→青绿两档，整张海图看上去是一块几乎没变化的蓝矩形，
+ * 岛形完全读不出来。三段渐变（墨蓝 → 青 → 带暖光的浅滩）才让「哪里是岛、哪里是深水」
+ * 一眼可辨 —— 而玩家要靠岛形判断该往哪盖楼。
+ */
 function seaColor(depth) {
-  const deep = [12, 38, 55];
-  const shallow = [32, 96, 120];
   const t = Math.max(0, Math.min(1, depth));
-  const mix = deep.map((v, i) => Math.round(v + (shallow[i] - v) * t));
+  const stops = [
+    [10, 30, 48],
+    [24, 78, 100],
+    [92, 146, 140],
+  ];
+  const span = 1 / (stops.length - 1);
+  const scaled = t / span;
+  const i = Math.min(stops.length - 2, Math.floor(scaled));
+  const local = Math.max(0, Math.min(1, scaled - i));
+  const a = stops[i];
+  const b = stops[i + 1];
+  const mix = a.map((v, k) => Math.round(v + (b[k] - v) * local));
   return `rgb(${mix[0]},${mix[1]},${mix[2]})`;
 }
 
@@ -263,6 +283,7 @@ function renderTown() {
   dom.codeField.value = encodeTown(town);
 }
 
+/** @feature F-016 多语言与三语切换 */
 function renderStatic() {
   const s = getStrings(lang);
   dom.subtitle.textContent = s.subtitle;
@@ -276,6 +297,7 @@ function renderStatic() {
   });
 }
 
+/** @feature F-015 调色板解锁：未解锁的颜色置灰且不可点 */
 function renderPalette() {
   const size = paletteSize(profile);
   dom.palette.innerHTML = '';
@@ -482,6 +504,7 @@ function updateHint() {
   hintCell = findHint(town, known);
 }
 
+/** @feature F-007 铜钱经济与地脉倍率：地脉上建造收入 ×3 */
 function doBuild(c, r) {
   const before = countLandmarks(town);
   const result = placeBlock(town, c, r, currentColor);
@@ -528,9 +551,57 @@ function doRemove(c, r) {
   renderTown();
 }
 
+/** @feature F-013 模式与城镇持久化：两种模式各存各的城 */
 function saveAll() {
   writeStorage(STORAGE_KEY, serializeProfile(profile));
-  writeStorage(TOWN_KEY, encodeTown(town));
+  writeStorage(MODE_KEY, dailyMode ? 'daily' : 'free');
+  // 自由岛与每日岛各存各的：模式切换只换读哪一份，不会互相覆盖
+  writeStorage(currentTownKey(), encodeTown(town));
+}
+
+/** 当前模式对应的城镇存档键。 */
+function currentTownKey() {
+  return dailyMode ? dailyTownKey(todayKey()) : TOWN_KEY;
+}
+
+/**
+ * 把一座城搬到更大的（或更小的）海图上。
+ * 岛屿是居中的，所以旧城要搬到新网格的**中心**，否则拓地之后
+ * 整座城会缩在左上角，和岛心错开一大截。
+ */
+function resizeTown(old, expandLevel) {
+  const next = createTown(old.seed, expandLevel);
+  const offC = Math.floor((next.cols - old.cols) / 2);
+  const offR = Math.floor((next.rows - old.rows) / 2);
+  for (let r = 0; r < old.rows; r += 1) {
+    for (let c = 0; c < old.cols; c += 1) {
+      const nr = r + offR;
+      const nc = c + offC;
+      if (nr < 0 || nr >= next.rows || nc < 0 || nc >= next.cols) continue;
+      next.heights[nr * next.cols + nc] = old.heights[r * old.cols + c];
+      next.colors[nr * next.cols + nc] = old.colors[r * old.cols + c];
+    }
+  }
+  next.builds = old.builds;
+  next.removals = old.removals;
+  return next;
+}
+
+/**
+ * 取出当前模式对应的那座城。
+ * 有存档就读存档（读不出来说明存档坏了，提示玩家而不是静默吞掉）；
+ * 没有存档就新建一座。
+ */
+function loadTownForMode() {
+  const saved = readStorage(currentTownKey());
+  if (saved) {
+    const decoded = decodeTown(saved);
+    if (decoded) return decoded;
+    showToast(getStrings(lang).code_invalid);
+  }
+  return dailyMode
+    ? createDailyTown(todayKey(), profile.upgrades.expand)
+    : createTown(pickSeed(), profile.upgrades.expand);
 }
 
 /** 把点击坐标换算成世界坐标，再做命中检测。 */
@@ -543,6 +614,7 @@ function pickCell(event) {
   return hitTest(town, px, py);
 }
 
+/** @feature F-019 鼠标与键盘双输入 */
 dom.svg.addEventListener('pointerdown', (event) => {
   // 右键 / 中键交给 contextmenu 与平移，这里只处理主键
   if (event.button !== 0) return;
@@ -554,6 +626,7 @@ dom.svg.addEventListener('pointerdown', (event) => {
   else doBuild(hit.c, hit.r);
 });
 
+/** @feature F-004 右键拆除 */
 dom.svg.addEventListener('contextmenu', (event) => {
   event.preventDefault();
   const hit = pickCell(event);
@@ -571,18 +644,22 @@ dom.demolishMode.addEventListener('click', () => {
   renderModeHint();
 });
 
+/** @feature F-011 模式切换不丢城：切换 = 换读哪一份存档 */
 dom.modeToggle.addEventListener('click', () => {
   dailyMode = !dailyMode;
-  town = dailyMode
-    ? createDailyTown(todayKey(), profile.upgrades.expand)
-    : createTown(pickSeed(), profile.upgrades.expand);
+  // 切模式 = 换读哪一座城，不是重新生成一座城。
+  // 早期版本在这里直接 new 一座城再立刻存档，把玩家建的城覆盖掉了。
+  town = loadTownForMode();
   updateHint();
   renderModeHint();
   renderAll();
   saveAll();
+  showToast(getStrings(lang)[dailyMode ? 'toast_daily' : 'toast_free']);
 });
 
 dom.clearBtn.addEventListener('click', () => {
+  // 「清空」只清当前这一座城（自由岛清自由岛、每日岛清每日岛），
+  // 另一座岛的存档不动，免得切过去发现自己的城没了。
   town = dailyMode
     ? createDailyTown(todayKey(), profile.upgrades.expand)
     : createTown(pickSeed(), profile.upgrades.expand);
@@ -607,15 +684,23 @@ dom.loadBtn.addEventListener('click', () => {
   const code = (dom.codeField.value || '').trim();
   const loaded = decodeTown(code);
   if (!loaded) {
-    showToast(getStrings(lang).code_hint);
+    showToast(getStrings(lang).code_invalid);
     return;
   }
-  town = loaded;
+  // 码里带着对方的海图大小。直接照搬会让「你买的拓地」和「实际地图」对不上，
+  // 所以把档案里的拓地等级同步成码里的等级，再把对方的楼搬过来 —— 楼不会丢。
+  if (loaded.expandLevel !== profile.upgrades.expand) {
+    profile = { ...profile, upgrades: { ...profile.upgrades, expand: loaded.expandLevel } };
+    town = resizeTown(loaded, loaded.expandLevel);
+  } else {
+    town = loaded;
+  }
   updateHint();
   renderAll();
   saveAll();
 });
 
+/** @feature F-008 工坊升级：拓地会把旧城搬进更大的海图 */
 dom.shop.addEventListener('click', (event) => {
   const btn = event.target.closest('.shop-buy');
   if (!btn || btn.disabled) return;
@@ -628,17 +713,7 @@ dom.shop.addEventListener('click', (event) => {
   profile = result.profile;
   if (kind === 'expand') {
     // 拓地要把旧城搬进更大的海图
-    const old = town;
-    const next = createTown(old.seed, profile.upgrades.expand);
-    for (let r = 0; r < Math.min(old.rows, next.rows); r += 1) {
-      for (let c = 0; c < Math.min(old.cols, next.cols); c += 1) {
-        next.heights[r * next.cols + c] = old.heights[r * old.cols + c];
-        next.colors[r * next.cols + c] = old.colors[r * old.cols + c];
-      }
-    }
-    next.builds = old.builds;
-    next.removals = old.removals;
-    town = next;
+    town = resizeTown(town, profile.upgrades.expand);
   }
   saveAll();
   updateHint();
@@ -651,9 +726,15 @@ dom.resetBtn.addEventListener('click', () => {
   if (!window.confirm(getStrings(lang).reset_confirm)) return;
   profile = createProfile();
   writeStorage(STORAGE_KEY, serializeProfile(profile));
+  // 重置要清两座岛 + 模式状态，否则切过去还能捡回旧城
+  writeStorage(TOWN_KEY, '');
+  writeStorage(dailyTownKey(todayKey()), '');
+  writeStorage(MODE_KEY, '');
+  dailyMode = false;
   town = createTown(pickSeed(), profile.upgrades.expand);
   currentColor = 0;
   updateHint();
+  renderModeHint();
   renderAll();
   saveAll();
 });
@@ -674,6 +755,7 @@ dom.langSwitch.addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
   const tag = event.target && event.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  /** @feature F-019 键盘选色（数字键 1–9） */
   if (event.key >= '1' && event.key <= '9') {
     const index = Number(event.key) - 1;
     if (index < paletteSize(profile)) {
@@ -689,10 +771,15 @@ document.addEventListener('keydown', (event) => {
 
 /* ── 启动 ─────────────────────────────────────────── */
 
-const savedTown = readStorage(TOWN_KEY);
-if (savedTown) {
-  const decoded = decodeTown(savedTown);
-  if (decoded) town = decoded;
+/**
+ * 启动：先按存档里的模式决定读哪一座城，再把城读出来。
+ * 早期版本固定读自由岛的存档：每日模式刷新后既丢了模式状态，
+ * 又会把每日岛的城当成自由岛 —— 玩家分不清自己在哪座岛上。
+ */
+function initTown() {
+  town = loadTownForMode();
+  updateHint();
+  renderAll();
 }
-updateHint();
-renderAll();
+
+initTown();

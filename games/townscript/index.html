@@ -59,6 +59,7 @@
 
     <div class="town-frame">
       <svg class="town" id="town-svg" role="img" aria-label="Town map"></svg>
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
     </div>
 
     <div class="code-row">
@@ -75,23 +76,23 @@
   </section>
 
   <aside class="side">
-    <section class="panel" aria-labelledby="shop-title">
+    <section class="panel panel-shop" aria-labelledby="shop-title">
       <h2 id="shop-title" data-i18n="shop">工坊</h2>
       <div class="shop" id="shop"></div>
     </section>
 
-    <section class="panel" aria-labelledby="dex-title">
+    <section class="panel panel-dex" aria-labelledby="dex-title">
       <h2 id="dex-title" data-i18n="dex">地志图鉴</h2>
       <div class="dex" id="dex"></div>
       <p class="muted small" id="dex-meta"></p>
     </section>
 
-    <section class="panel" aria-labelledby="ach-title">
+    <section class="panel panel-ach" aria-labelledby="ach-title">
       <h2 id="ach-title" data-i18n="achievements">成就</h2>
       <ul class="achievements" id="achievements"></ul>
     </section>
 
-    <section class="panel" aria-labelledby="rec-title">
+    <section class="panel panel-rec" aria-labelledby="rec-title">
       <h2 id="rec-title" data-i18n="records">纪录</h2>
       <dl class="records" id="records">
         <div><dt data-i18n="best_coins">累计铜钱</dt><dd id="rec-coins">0</dd></div>
@@ -107,7 +108,6 @@
   <span data-i18n="footer">原创实现 · 玩法致敬上下文生成类城镇沙盒网页小游戏</span>
 </footer>
 
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script type="module" src="assets/app.js"></script>
 </body>

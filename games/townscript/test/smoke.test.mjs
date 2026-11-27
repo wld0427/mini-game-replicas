@@ -30,6 +30,14 @@ async function cellPoint(page, c, r, level = 0) {
   };
 }
 
+/**
+ * @covers F-003 起楼与叠高
+ * @covers F-004 右键拆除
+ * @covers F-005 命中检测与渲染同几何
+ * @covers F-006 地志图鉴与里程碑
+ * @covers F-011 模式切换不丢城
+ * @covers F-015 调色板解锁
+ */
 test('浏览器冒烟测试', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
   const { server, port } = await startServer(root);
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -117,6 +125,10 @@ test('浏览器冒烟测试', { skip: chromium ? false : 'playwright 不可用' 
   assert.deepEqual(consoleErrors, [], `控制台报错: ${consoleErrors.join(' | ')}`);
 });
 
+/**
+ * @covers F-009 城镇代码往返（含拓地）
+ * @covers F-010 旧码兼容与非法码处理
+ */
 test('城镇代码可以复制与还原', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
   const { server, port } = await startServer(root);
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -139,7 +151,10 @@ test('城镇代码可以复制与还原', { skip: chromium ? false : 'playwright
   await page.waitForFunction(() => document.querySelectorAll('#town-svg .block').length >= 1);
 
   const code = await page.inputValue('#code-field');
-  assert.ok(code.startsWith('TS1-'), `城镇代码格式异常: ${code}`);
+  assert.ok(code.startsWith('TS2-'), `城镇代码格式异常: ${code}`);
+  // TS2 带上拓地等级与建造计数，否则拓地后分享出去的码还原不了
+  const segments = code.split('-');
+  assert.equal(segments.length, 7, `TS2 代码应有 7 段，实际 ${segments.length}`);
 
   // 清空后用代码还原
   await page.click('#clear-btn').catch(() => {});
@@ -155,6 +170,9 @@ test('城镇代码可以复制与还原', { skip: chromium ? false : 'playwright
   assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
 });
 
+/**
+ * @covers F-019 鼠标与键盘双输入
+ */
 test('移动端视口下布局不溢出且能建造', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
   const { server, port } = await startServer(root);
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -186,5 +204,196 @@ test('移动端视口下布局不溢出且能建造', { skip: chromium ? false :
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   assert.ok(overflowAfter <= 2, `建造后移动端横向溢出 ${overflowAfter}px`);
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * 模式切换不丢城 + 刷新后模式与城都还在。
+ *
+ * 这是审计查出的 P0：早期版本切换模式会直接新建一座岛并立刻存档，
+ * 玩家建的城被覆盖；每日模式的状态也只在内存里，刷新即丢。
+ *
+ * @covers F-011
+ * @covers F-013
+ */
+test('切换模式不丢城，刷新后模式与城都还在', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#town-svg rect');
+
+  // 建 3 块
+  for (const [c, r] of [[6, 4], [7, 4], [6, 5]]) {
+    const p = await cellPoint(page, c, r);
+    await page.mouse.click(p.x, p.y);
+    await page.waitForTimeout(120);
+  }
+  const built = await page.locator('#town-svg .block').count();
+  assert.equal(built, 3, `应建出 3 块，实际 ${built}`);
+  const codeBefore = await page.evaluate(() => window.localStorage.getItem('townscript-town-v1'));
+  assert.ok(codeBefore, '自由岛的存档应存在');
+
+  // 切到每日岛
+  await page.click('#mode-toggle');
+  await page.waitForTimeout(400);
+  assert.equal(await page.getAttribute('#mode-toggle', 'aria-pressed'), 'true', '应切到每日模式');
+  const dailyBlocks = await page.locator('#town-svg .block').count();
+  assert.equal(dailyBlocks, 0, '每日岛是另一座城，不该有自由岛的楼');
+  const freeCodeAfter = await page.evaluate(() => window.localStorage.getItem('townscript-town-v1'));
+  assert.equal(freeCodeAfter, codeBefore, '切到每日岛后自由岛的存档不能被改动');
+
+  // 切回自由岛：楼必须还在，存档必须一致
+  await page.click('#mode-toggle');
+  await page.waitForTimeout(400);
+  assert.equal(await page.getAttribute('#mode-toggle', 'aria-pressed'), 'false', '应切回自由模式');
+  assert.equal(await page.locator('#town-svg .block').count(), built, '切回来后楼必须还在');
+  assert.equal(
+    await page.evaluate(() => window.localStorage.getItem('townscript-town-v1')),
+    codeBefore,
+    '切回来后城镇代码必须与切换前完全一致',
+  );
+
+  // 刷新：模式与城都要还在
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('#town-svg rect');
+  assert.equal(await page.getAttribute('#mode-toggle', 'aria-pressed'), 'false', '刷新后应仍在自由模式');
+  assert.equal(await page.locator('#town-svg .block').count(), built, '刷新后城必须还在');
+
+  // 刷新后再切到每日模式，模式状态也要被记住
+  await page.click('#mode-toggle');
+  await page.waitForTimeout(300);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('#town-svg rect');
+  assert.equal(await page.getAttribute('#mode-toggle', 'aria-pressed'), 'true', '刷新后应仍在每日模式');
+
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * 拓地之后刷新，整座城必须还在（早期版本会把城静默丢掉）。
+ *
+ * @covers F-009
+ * @covers F-013
+ */
+test('拓地升级后刷新，城不会丢', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  // 直接注入一份「已经拓地 2 级」的档案
+  await page.addInitScript(() => {
+    window.localStorage.setItem('townscript-profile-v1', JSON.stringify({
+      version: 1, coins: 4000, totalEarned: 4000,
+      upgrades: { expand: 2, palette: 0, survey: 0, income: 0 },
+      dex: {}, achievements: {},
+      stats: { builds: 0, removals: 0, veinBuilds: 0, discovered: 0, bestHeight: 0 },
+      startedAt: null,
+    }));
+  });
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#town-svg rect');
+
+  for (const [c, r] of [[6, 4], [7, 4], [6, 5]]) {
+    const p = await cellPoint(page, c, r);
+    await page.mouse.click(p.x, p.y);
+    await page.waitForTimeout(120);
+  }
+  const built = await page.locator('#town-svg .block').count();
+  assert.equal(built, 3, `应建出 3 块，实际 ${built}`);
+
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('#town-svg rect');
+  assert.equal(
+    await page.locator('#town-svg .block').count(),
+    built,
+    '拓地后刷新，城被丢掉了（存档没带上拓地等级）',
+  );
+
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * 三语切换 + 音效合成。
+ *
+ * @covers F-016
+ * @covers F-017
+ */
+test('三语切换与音效合成', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  // 扩展真实 AudioContext，只统计振荡器（不破坏音频链路）
+  await page.addInitScript(() => {
+    window.__oscCount = 0;
+    window.__oscFreqs = [];
+    const Original = window.AudioContext;
+    window.AudioContext = class extends Original {
+      createOscillator() {
+        window.__oscCount += 1;
+        const osc = super.createOscillator();
+        const param = osc.frequency;
+        const orig = param.setValueAtTime.bind(param);
+        param.setValueAtTime = (v, t) => {
+          window.__oscFreqs.push(v);
+          return orig(v, t);
+        };
+        return osc;
+      }
+    };
+    window.webkitAudioContext = window.AudioContext;
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#town-svg rect');
+
+  // 切到英文
+  await page.click('.lang-btn[data-lang="en"]');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  const shopTitle = (await page.textContent('#shop-title')).trim();
+  assert.ok(/Gear|Workshop|Shop/i.test(shopTitle), `英文下商店标题应为英文，实际「${shopTitle}」`);
+
+  // 落子 → 有振荡器
+  const p = await cellPoint(page, 6, 4);
+  await page.mouse.click(p.x, p.y);
+  await page.waitForTimeout(200);
+  const count = await page.evaluate(() => window.__oscCount);
+  assert.ok(count >= 1, `落子应创建振荡器，实际 ${count}`);
+  const freqs = await page.evaluate(() => window.__oscFreqs);
+  assert.ok(freqs.length > 0, '应记录到振荡器频率');
+
+  // 切到日文
+  await page.click('.lang-btn[data-lang="ja"]');
+  await page.waitForFunction(() => document.documentElement.lang === 'ja');
+
   assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
 });
