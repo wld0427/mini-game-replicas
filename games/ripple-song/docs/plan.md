@@ -48,8 +48,8 @@ node scripts/review.mjs games/ripple-song
 **期望输出**：
 
 ```
-# tests 24
-# pass 24
+# tests 23
+# pass 23
 # fail 0
 
 ✓ 静态审查通过：检查了 1 个项目，未发现问题。
