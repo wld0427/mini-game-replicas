@@ -5,6 +5,8 @@
  * 渲染层不得参与任何判定 —— 共鸣点亮不亮只看 logic.js 的振幅包络。
  */
 
+import { createRenderer } from './renderer.js';
+import { createParticleLayer } from './fx.js';
 import {
   GRID_H,
   GRID_W,
@@ -29,6 +31,8 @@ const el = (id) => document.getElementById(id);
 const dom = {
   subtitle: el('game-subtitle'),
   sea: el('sea'),
+  fx: el('fx'),
+  seaFrame: el('sea').parentElement,
   markers: el('markers'),
   overlay: el('overlay'),
   overlayTitle: el('overlay-title'),
@@ -120,6 +124,7 @@ let game = null;
 let rafId = 0;
 let lastTs = 0;
 let toastTimer = 0;
+let flash = 0;
 
 /* ── 存储 ───────────────────────────────────────────── */
 
@@ -145,74 +150,18 @@ function saveProfile() {
 
 /* ── 渲染 ───────────────────────────────────────────── */
 
-const ctx = dom.sea.getContext('2d');
-const image = ctx.createImageData(GRID_W, GRID_H);
-const pixels = image.data;
+/** @feature F-013 WebGL2 波场渲染（不可用时自动回退 2D canvas，玩法不受影响） */
+const renderer = createRenderer(dom.sea);
+// 渲染模式暴露在 DOM 上：浏览器测试据此断言「走的是 WebGL2 而不是回退」
+dom.sea.dataset.mode = renderer.mode;
+dom.sea.dataset.glError = renderer.glError || '';
+/** @feature F-015 三层合成：波场（底）→ 粒子（中）→ 标记（顶） */
+const particles = createParticleLayer(dom.fx);
 
-/**
- * 把波场画成 160×90 的像素图。
- * 相位 → 色相（波沿传播方向跑色），振幅 → 亮度与饱和度。
- *
- * 早期版本用「亮度 + 固定冷色偏移」，整片海面看上去是灰的 —— 波形的层次
- * 全被压平了。改成 HSV 后，亮的地方是暖白、暗的地方是深蓝紫，
- * 驻波的节与腹一眼可辨。
- *
- * @param {object} game
- */
-function paintField(game) {
-  const { u, uPrev, env, obstacles } = game.field;
-  for (let i = 0; i < u.length; i += 1) {
-    const o = i * 4;
-    if (obstacles[i]) {
-      pixels[o] = 14; pixels[o + 1] = 17; pixels[o + 2] = 30; pixels[o + 3] = 255;
-      continue;
-    }
-    const v = u[i];
-    const phase = Math.atan2(uPrev[i], v);            // −π..π
-    const hue = 196 + (phase / Math.PI) * 88;         // 青 → 蓝 → 紫
-    const amp = Math.min(1, Math.abs(v) * 3.4);
-    const glow = Math.min(1, env[i] * 0.6);
-    const sat = 0.30 + 0.55 * amp + 0.15 * glow;
-    const val = 0.07 + 0.80 * amp + 0.30 * glow;
-    const rgb = hsv2rgb(hue / 360, Math.min(1, sat), Math.min(1, val));
-    pixels[o] = rgb[0];
-    pixels[o + 1] = rgb[1];
-    pixels[o + 2] = rgb[2];
-    pixels[o + 3] = 255;
-  }
-  ctx.putImageData(image, 0, 0);
-}
+let prevLit = [];
 
-/**
- * HSV → RGB。
- * @param {number} h 色相 0..1
- * @param {number} s 饱和度 0..1
- * @param {number} v 明度 0..1
- * @returns {[number, number, number]}
- */
-function hsv2rgb(h, s, v) {
-  const i = Math.floor(h * 6);
-  const f = h * 6 - i;
-  const p = v * (1 - s);
-  const q = v * (1 - f * s);
-  const t = v * (1 - (1 - f) * s);
-  const mod = i % 6;
-  const table = [
-    [v, t, p], [q, v, p], [p, v, t],
-    [p, q, v], [t, p, v], [v, p, q],
-  ][mod];
-  return [
-    Math.round(table[0] * 255),
-    Math.round(table[1] * 255),
-    Math.round(table[2] * 255),
-  ];
-}
-
-/**
- * 画共鸣点标记层（DOM 覆盖在 canvas 上）。
- * @param {object} game
- */
 function renderMarkers(game) {
+  /** @feature F-016 共鸣点标记层：点亮时爆开光环并给出可见反馈 */
   dom.markers.innerHTML = '';
   for (let i = 0; i < game.targets.length; i += 1) {
     const t = game.targets[i];
@@ -221,7 +170,13 @@ function renderMarkers(game) {
     node.style.left = `${((t.x + 0.5) / GRID_W) * 100}%`;
     node.style.top = `${((t.y + 0.5) / GRID_H) * 100}%`;
     dom.markers.append(node);
+    // 新点亮的共鸣点：爆一圈光环 + 粒子
+    if (game.lit[i] && !prevLit[i]) {
+      particles.spawnBurst(t.x + 0.5, t.y + 0.5, { count: 20, hue: 158 });
+      node.classList.add('just-lit');
+    }
   }
+  prevLit = game.lit.slice();
   // 波源
   const src = game.sources[0];
   const dot = document.createElement('span');
@@ -331,12 +286,19 @@ function frame(ts) {
   if (!game) return;
 
   const result = tick(game, dt);
-  paintField(game);
+  flash = Math.max(0, flash - dt / 700);
+  particles.update(dt / 1000);
+  renderer.render(game.field, { flash, time: ts / 1000 });
+  particles.render();
   renderMarkers(game);
   renderHud(game);
 
   if (result === 'won') {
     const s = STRINGS[lang];
+    flash = 1;
+    dom.seaFrame.classList.remove('is-converge');
+    void dom.seaFrame.offsetWidth;
+    dom.seaFrame.classList.add('is-converge');
     profile = recordClear(profile, levelIndex, game.elapsed, game.resonance);
     saveProfile();
     dom.overlayTitle.textContent = s.won;
@@ -376,7 +338,10 @@ document.addEventListener('keydown', (event) => {
   const dir = KEYS[event.code];
   if (!dir) return;
   event.preventDefault();
-  if (game && game.state === 'playing') moveSource(game, dir[0], dir[1]);
+  /** @feature F-019 输入与手感：键盘 / 触屏都能移动波源 */
+  if (game && game.state === 'playing' && moveSource(game, dir[0], dir[1])) {
+    particles.spawnSplash(game.sources[0].x + 0.5, game.sources[0].y + 0.5, { count: 6 });
+  }
 });
 
 dom.startBtn.addEventListener('click', () => {
@@ -415,12 +380,16 @@ dom.sea.addEventListener('pointerdown', (event) => {
   dragging = true;
   dom.sea.setPointerCapture(event.pointerId);
   const p = seaPoint(event);
-  moveSource(game, p.x - game.sources[0].x, p.y - game.sources[0].y);
+  if (moveSource(game, p.x - game.sources[0].x, p.y - game.sources[0].y)) {
+    particles.spawnSplash(game.sources[0].x + 0.5, game.sources[0].y + 0.5, { count: 8 });
+  }
 });
 dom.sea.addEventListener('pointermove', (event) => {
   if (!dragging || !game || game.state !== 'playing') return;
   const p = seaPoint(event);
-  moveSource(game, p.x - game.sources[0].x, p.y - game.sources[0].y);
+  if (moveSource(game, p.x - game.sources[0].x, p.y - game.sources[0].y)) {
+    particles.spawnSplash(game.sources[0].x + 0.5, game.sources[0].y + 0.5, { count: 4 });
+  }
 });
 dom.sea.addEventListener('pointerup', () => { dragging = false; });
 dom.sea.addEventListener('pointercancel', () => { dragging = false; });
@@ -452,7 +421,7 @@ renderRecords();
 function showTitleScene() {
   level = createLevel(20261127, 0);
   game = createGame(level);
-  paintField(game);
+  renderer.render(game.field, { flash: 0, time: 0 });
   renderMarkers(game);
   renderHud(game);
   dom.overlay.hidden = false;

@@ -33,12 +33,17 @@ ripple-song/
 ├── index.html          页面骨架
 ├── assets/
 │   ├── app.css         样式（深空海面主题，含移动端与 reduced-motion 适配）
-│   ├── app.js          表现层：2D canvas 波场渲染 / 输入 / HUD / 持久化
-│   └── i18n.js         zh / en / ja 文案（阶段 2 拆出）
+│   ├── app.js          表现层：输入 / HUD / 三层合成 / 持久化
+│   ├── renderer.js     WebGL2 波场渲染（相位→色相、振幅→亮度、色散、两级高斯泛光、暗角颗粒）
+│   │                   + 2D canvas 回退（同一份波场数据，玩法不受影响）
+│   └── fx.js           粒子层：模拟写成纯函数（可单测）+ canvas 绘制
 ├── src/
 │   └── logic.js        纯逻辑层（无 DOM 依赖，全部规则在此，可完整单测）
 ├── test/
-│   └── logic.test.mjs  23 条单元测试
+│   ├── logic.test.mjs  23 条单元测试（波场 / 规则 / 难度契约）
+│   ├── fx.test.mjs     4 条粒子层单测
+│   ├── render.test.mjs 3 条浏览器用例（WebGL2 编译 / 像素非黑 / 三层合成 / 输入）
+│   └── helpers.mjs     静态服务器与 Playwright 装载辅助
 └── docs/
     ├── proposal.md     立项评审
     ├── design.md       功能清单、难度契约与设计
@@ -63,8 +68,12 @@ node --test "test/*.test.mjs"
 ```
 
 覆盖波场积分的确定性、礁石吸收、振幅包络、共鸣点判定、关卡生成的可解性、
-波源移动的边界、胜负与计分、档案往返与脏数据回退，
+波源移动的边界、胜负与计分、档案往返与脏数据回退、粒子模拟的纯函数性质，
 以及**难度契约三档路线**（参考路线能通关 / 200 次随机走位 0 次通关 / 挂机必败且零分）。
+浏览器用例还会真编译 WebGL2 着色器（断言 info log 为空）并读回画布中心像素证明确实画出了东西。
+
+> headless Chromium 需要 `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`
+> 才能拿到 WebGL2 上下文；拿不到时会自动回退 2D canvas，玩法不受影响。
 
 ## 键盘操作
 

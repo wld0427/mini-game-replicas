@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 1 | 核心逻辑层：波场积分 + 规则 + 单测 | `src/logic.js` `test/logic.test.mjs` |
 | 1+ | 页面骨架 + **2D canvas 回退渲染**（设计里本来就要求的降级路径，先做它） | `index.html` `assets/app.css` `assets/app.js` `test/helpers.mjs` |
-| 2 | 主渲染路径：WebGL2 波场 + 粒子层 + 标记层动效 | `assets/renderer.js` `assets/fx.js` |
+| 2 | 主渲染路径：WebGL2 波场 + 粒子层 + 标记层动效 | `assets/renderer.js` `assets/fx.js` |（已完成） |
 | 3 | 音频与手感层 | `assets/audio.js` |
 | 4 | 交付验收：双端截图 + 验收记录 + 部署 | `docs/acceptance.md` `docs/shots/` + 部署 URL |
 
@@ -100,6 +100,17 @@ node scripts/review.mjs games/ripple-song
 **完成标准**：测试全绿；WebGL2 着色器在浏览器内编译无错、info log 为空、中心像素非黑；
 2D 回退路径可用。
 
+**阶段 2 产出（已完成）**：`assets/renderer.js`（WebGL2 三趟渲染：亮部 + 水平高斯 → 垂直高斯 → 合成，
+含三通道色散 / 暗角 / 颗粒；`createFallback()` 提供 2D canvas 回退）、
+`assets/fx.js`（粒子模拟写成纯函数 + canvas 粒子层）、
+`test/render.test.mjs`（3 条浏览器用例）、`test/fx.test.mjs`（4 条粒子单测）。
+实测 headless Chromium 下走的是 WebGL2（ANGLE/SwiftShader），info log 为空。
+
+**阶段 2 修掉的三个真问题**：
+① 合成着色器只看瞬时振幅 → 远处波按 1/r 衰减几乎全黑，整片海面只剩源附近一圈 ⇒ 加 gamma 曲线；
+② 一个 program 挂了三个片元着色器 → 链接失败 ⇒ 拆成三个独立 program；
+③ 粒子层每帧重建标记 DOM 会丢掉刚加的光环动画状态 ⇒ 只在点亮状态变化时重建。
+
 ---
 
 ### 阶段 3：音频与手感层
@@ -182,3 +193,4 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<部署域名>/
 | 关卡无解（目标点摆歪了） | 中 | 高 | 关卡生成用「标准解」模拟产出目标，**生成即保证有解**，并有单测守着 |
 | 驻波解太刁钻玩家解不出 | 中 | 中 | 共鸣值仪表显示离阈值多远；关卡随进度增加目标数而非提高单点精度 |
 | 低端机 WebGL2 跑不动 | 中 | 中 | 网格可降级到 120×68；2D canvas 回退 |
+| headless 下 rAF 只有几帧/秒 | 高 | 低（仅影响自动化） | 无头 Chromium 的 rAF 由合成器驱动，帧率极低（实测 ~3fps），波场传播会显得很慢。**浏览器断言不能靠固定 sleep**，要用 `waitForFunction` 轮询 DOM；截图前要留足等待时间 |
