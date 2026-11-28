@@ -13,7 +13,7 @@
 | 1 | 核心逻辑层：波场积分 + 规则 + 单测 | `src/logic.js` `test/logic.test.mjs` |
 | 1+ | 页面骨架 + **2D canvas 回退渲染**（设计里本来就要求的降级路径，先做它） | `index.html` `assets/app.css` `assets/app.js` `test/helpers.mjs` |
 | 2 | 主渲染路径：WebGL2 波场 + 粒子层 + 标记层动效 | `assets/renderer.js` `assets/fx.js` |（已完成） |
-| 3 | 音频与手感层 | `assets/audio.js` |
+| 3 | 音频与手感层 | `assets/audio.js` |（已完成） |
 | 4 | 交付验收：双端截图 + 验收记录 + 部署 | `docs/acceptance.md` `docs/shots/` + 部署 URL |
 
 > 阶段 1+ 把 2D canvas 回退先做出来了：它本来就是设计里「WebGL2 不可用时的降级路径」，
@@ -134,14 +134,30 @@ node scripts/review.mjs games/ripple-song
 **期望输出**：
 
 ```
-# tests 34
-# pass 34
+# tests 37
+# pass 37
 # fail 0
 
 ✓ 静态审查通过：检查了 1 个项目，未发现问题。
 ```
 
 **完成标准**：测试全绿；音频零外部文件（断言无音频资源请求）；连击音频率严格递增。
+
+**阶段 3 产出（已完成）**：`assets/audio.js`（WebAudio 现场合成：移动轻响 / 点亮铃音 /
+驻波收敛和弦 / 失败下滑音 / 界面音 + 波场底噪；程序化脉冲响应混响 + DynamicsCompressor）、
+`test/audio.test.mjs`（5 条纯函数单测：音阶频率严格递增、脉冲响应包络单调衰减）、
+`test/audio.browser.test.mjs`（1 条浏览器用例：用户手势后上下文建立、脉冲响应长度 > 0、
+移动触发振荡器、**整局零音频文件请求**）。
+表现层另加手感层：点亮时震屏（`is-shake-hit`）、过关时强震屏（`is-shake-win`）+ 全屏泛光抬亮。
+
+另外补了一条**端到端通关用例**（`test/render.test.mjs`）：从逻辑层取标准解位置，
+用方向键把波源一步步挪过去，验证全部共鸣点点亮并过关 ——
+证明「逻辑 → 渲染 → 标记 → 胜负」整条链是通的，而不只是每个零件各自能跑。
+
+**阶段 3 修掉的两个真问题**：
+① 音频没等用户手势就建 AudioContext → 浏览器直接拒绝 → 改为只在「开始」点击与首次方向键时初始化；
+② 浏览器用例里给 ConvolverNode 覆盖 `buffer` 的 setter → 节点的 `connect` 解析失败、
+整条音频链断掉 → 改为只留节点引用、断言时再读长度。
 
 ---
 
@@ -193,4 +209,4 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<部署域名>/
 | 关卡无解（目标点摆歪了） | 中 | 高 | 关卡生成用「标准解」模拟产出目标，**生成即保证有解**，并有单测守着 |
 | 驻波解太刁钻玩家解不出 | 中 | 中 | 共鸣值仪表显示离阈值多远；关卡随进度增加目标数而非提高单点精度 |
 | 低端机 WebGL2 跑不动 | 中 | 中 | 网格可降级到 120×68；2D canvas 回退 |
-| headless 下 rAF 只有几帧/秒 | 高 | 低（仅影响自动化） | 无头 Chromium 的 rAF 由合成器驱动，帧率极低（实测 ~3fps），波场传播会显得很慢。**浏览器断言不能靠固定 sleep**，要用 `waitForFunction` 轮询 DOM；截图前要留足等待时间 |
+| headless 下 rAF 只有几帧/秒 | 高 | 低（仅影响自动化） | 无头 Chromium 的 rAF 由合成器驱动，帧率极低（实测 ~3fps），波场传播会显得很慢。**浏览器断言不能靠固定 sleep**，要用 `waitForFunction` 轮询 DOM；截图前要留足等待时间。**也不能按 DOM 里的位置来导航**（标记层几百毫秒才刷新一次，照它按会严重过冲）—— 要按逻辑层的起点与解的差值直接算按键次数 |

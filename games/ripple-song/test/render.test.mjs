@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { createLevel } from '../src/logic.js';
 import { loadChromium, startServer } from './helpers.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -171,5 +172,68 @@ test('输入：方向键与拖拽都能移动波源', { skip: chromium ? false :
   assert.ok(dragged, '拖拽应移动波源');
   const afterDrag = await readSource();
 
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * 端到端：真的把这一关打通。
+ *
+ * 标准解的位置从逻辑层取（同一份确定性关卡生成），
+ * 用方向键把波源一步步挪过去 —— 验证「逻辑 → 渲染 → 标记 → 胜负」整条链是通的，
+ * 而不只是每个零件各自能跑。
+ *
+ * @covers F-010
+ * @covers F-016
+ */
+test('端到端：把波源挪到标准解，全部共鸣点点亮并过关', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: GL_ARGS });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  // 关卡是确定性的：同一 seed 必得同一座岛，标准解位置固定
+  const level = createLevel(20261127, 0);
+  const target = level.solution;
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#sea');
+  await page.click('#start-btn');
+  await page.waitForTimeout(300);
+
+  // 用方向键把波源从起点挪到标准解。
+  // 注意：**不能按 DOM 里的位置来导航** —— headless 下 rAF 只有几帧/秒，
+  // 标记层的坐标要几百毫秒才刷新一次，照着它按会严重过冲。
+  // 按键是立即改游戏状态的，所以这里直接按起点与解的差值算按键次数。
+  const start = level.start;
+  const dx = target.x - start.x;
+  const dy = target.y - start.y;
+  for (let i = 0; i < Math.abs(dx); i += 1) {
+    await page.keyboard.press(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+  }
+  for (let i = 0; i < Math.abs(dy); i += 1) {
+    await page.keyboard.press(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+  }
+  await page.waitForTimeout(200);
+
+  // 等波传开、共鸣点点亮
+  const won = await page.waitForFunction(
+    () => document.getElementById('overlay') && !document.getElementById('overlay').hidden
+      && document.getElementById('overlay-title').textContent.trim().length > 0,
+    null,
+    { timeout: 60000 },
+  ).then(() => true).catch(() => false);
+
+  assert.ok(won, '把波源挪到标准解后应当能过关');
+  const lit = await page.locator('#markers .target.is-lit').count();
+  const total = await page.locator('#markers .target').count();
+  assert.equal(lit, total, `全部共鸣点都应点亮（${lit}/${total}）`);
   assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
 });

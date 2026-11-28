@@ -36,13 +36,17 @@ ripple-song/
 │   ├── app.js          表现层：输入 / HUD / 三层合成 / 持久化
 │   ├── renderer.js     WebGL2 波场渲染（相位→色相、振幅→亮度、色散、两级高斯泛光、暗角颗粒）
 │   │                   + 2D canvas 回退（同一份波场数据，玩法不受影响）
-│   └── fx.js           粒子层：模拟写成纯函数（可单测）+ canvas 绘制
+│   ├── fx.js           粒子层：模拟写成纯函数（可单测）+ canvas 绘制
+│   └── audio.js        WebAudio 现场合成：移动轻响 / 点亮铃音 / 收敛和弦 / 失败下滑音 / 波场底噪
+│                       + 程序化脉冲响应混响（零音频文件）
 ├── src/
 │   └── logic.js        纯逻辑层（无 DOM 依赖，全部规则在此，可完整单测）
 ├── test/
 │   ├── logic.test.mjs  23 条单元测试（波场 / 规则 / 难度契约）
 │   ├── fx.test.mjs     4 条粒子层单测
+│   ├── audio.test.mjs  5 条音频单测（音阶频率 / 脉冲响应包络）
 │   ├── render.test.mjs 3 条浏览器用例（WebGL2 编译 / 像素非黑 / 三层合成 / 输入）
+│   ├── audio.browser.test.mjs 1 条浏览器用例（音频上下文 / 混响 / 零音频文件请求）
 │   └── helpers.mjs     静态服务器与 Playwright 装载辅助
 └── docs/
     ├── proposal.md     立项评审

@@ -7,6 +7,7 @@
 
 import { createRenderer } from './renderer.js';
 import { createParticleLayer } from './fx.js';
+import { createAudioEngine } from './audio.js';
 import {
   GRID_H,
   GRID_W,
@@ -150,6 +151,8 @@ function saveProfile() {
 
 /* ── 渲染 ───────────────────────────────────────────── */
 
+/** @feature F-017 WebAudio 合成：零音频文件，全部现场合成 */
+const audio = createAudioEngine();
 /** @feature F-013 WebGL2 波场渲染（不可用时自动回退 2D canvas，玩法不受影响） */
 const renderer = createRenderer(dom.sea);
 // 渲染模式暴露在 DOM 上：浏览器测试据此断言「走的是 WebGL2 而不是回退」
@@ -159,6 +162,22 @@ dom.sea.dataset.glError = renderer.glError || '';
 const particles = createParticleLayer(dom.fx);
 
 let prevLit = [];
+let litCount = 0;
+let shakeTimer = 0;
+
+/**
+ * 震屏：共鸣点点亮时给海面一记短促的位移。
+ * @param {string} kind 'hit' | 'win'
+ */
+function shake(kind) {
+  dom.seaFrame.classList.remove('is-shake-hit', 'is-shake-win');
+  void dom.seaFrame.offsetWidth;
+  dom.seaFrame.classList.add(kind === 'win' ? 'is-shake-win' : 'is-shake-hit');
+  if (shakeTimer) clearTimeout(shakeTimer);
+  shakeTimer = setTimeout(() => {
+    dom.seaFrame.classList.remove('is-shake-hit', 'is-shake-win');
+  }, kind === 'win' ? 620 : 300);
+}
 
 function renderMarkers(game) {
   /** @feature F-016 共鸣点标记层：点亮时爆开光环并给出可见反馈 */
@@ -170,12 +189,17 @@ function renderMarkers(game) {
     node.style.left = `${((t.x + 0.5) / GRID_W) * 100}%`;
     node.style.top = `${((t.y + 0.5) / GRID_H) * 100}%`;
     dom.markers.append(node);
-    // 新点亮的共鸣点：爆一圈光环 + 粒子
+    // 新点亮的共鸣点：爆一圈光环 + 粒子 + 音高随连击上行的铃音
     if (game.lit[i] && !prevLit[i]) {
       particles.spawnBurst(t.x + 0.5, t.y + 0.5, { count: 20, hue: 158 });
       node.classList.add('just-lit');
+      litCount += 1;
+      /** @feature F-018 程序化混响 + 连击音阶：音高随连击序号上行 */
+      audio.light(litCount - 1);
+      shake('hit');
     }
   }
+  if (!game.lit.some(Boolean)) litCount = 0;
   prevLit = game.lit.slice();
   // 波源
   const src = game.sources[0];
@@ -290,12 +314,17 @@ function frame(ts) {
   particles.update(dt / 1000);
   renderer.render(game.field, { flash, time: ts / 1000 });
   particles.render();
+  // 波场底噪：共鸣值越高，底噪越明显
+  audio.setBed(game.resonance);
   renderMarkers(game);
   renderHud(game);
 
   if (result === 'won') {
     const s = STRINGS[lang];
     flash = 1;
+    /** @feature F-017 驻波收敛和弦 */
+    audio.converge();
+    shake('win');
     dom.seaFrame.classList.remove('is-converge');
     void dom.seaFrame.offsetWidth;
     dom.seaFrame.classList.add('is-converge');
@@ -315,6 +344,7 @@ function frame(ts) {
   } else if (result === 'lost') {
     const s = STRINGS[lang];
     const dark = game.lit.filter((x) => !x).length;
+    audio.lose();
     dom.overlayTitle.textContent = s.lost;
     dom.overlaySub.textContent = s.lost_sub.replace('{n}', dark);
     dom.overlayHint.textContent = '';
@@ -338,13 +368,19 @@ document.addEventListener('keydown', (event) => {
   const dir = KEYS[event.code];
   if (!dir) return;
   event.preventDefault();
+  // 键盘也是用户手势 —— 允许在按下第一个方向键时就初始化音频
+  audio.ensure();
   /** @feature F-019 输入与手感：键盘 / 触屏都能移动波源 */
   if (game && game.state === 'playing' && moveSource(game, dir[0], dir[1])) {
     particles.spawnSplash(game.sources[0].x + 0.5, game.sources[0].y + 0.5, { count: 6 });
+    audio.move(dir[0]);
   }
 });
 
 dom.startBtn.addEventListener('click', () => {
+  // 浏览器要求首次发声前有用户手势 —— 这里正好是
+  audio.ensure();
+  audio.click();
   if (game && game.state === 'won') {
     levelIndex += 1;
     startLevel();
@@ -382,6 +418,7 @@ dom.sea.addEventListener('pointerdown', (event) => {
   const p = seaPoint(event);
   if (moveSource(game, p.x - game.sources[0].x, p.y - game.sources[0].y)) {
     particles.spawnSplash(game.sources[0].x + 0.5, game.sources[0].y + 0.5, { count: 8 });
+    audio.move(0);
   }
 });
 dom.sea.addEventListener('pointermove', (event) => {
@@ -389,6 +426,7 @@ dom.sea.addEventListener('pointermove', (event) => {
   const p = seaPoint(event);
   if (moveSource(game, p.x - game.sources[0].x, p.y - game.sources[0].y)) {
     particles.spawnSplash(game.sources[0].x + 0.5, game.sources[0].y + 0.5, { count: 4 });
+    audio.move(0);
   }
 });
 dom.sea.addEventListener('pointerup', () => { dragging = false; });

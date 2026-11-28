@@ -17,7 +17,7 @@
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
 | 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 42/42 | ✅ 6/6 | ✅ | ✅ 已过 | https://p8lzhxknhoedg.space.mcode.cn | 已交付 |
-| 7 | Ripple Song 涟歌 | 波场物理解谜（新立项） | 你不能点亮目标，你只能移动波：160×90 波动方程场 + 相干波源 + 礁石吸收 + 驻波干涉 + 共鸣点阈值点亮 | `games/ripple-song/` | ✅ 27/27 | ✅ 3/3 | ✅ | 🚧 阶段 2/4 | https://9tnjq6fe8zdgo.space.mcode.cn | 开发中 |
+| 7 | Ripple Song 涟歌 | 波场物理解谜（新立项） | 你不能点亮目标，你只能移动波：160×90 波动方程场 + 相干波源 + 礁石吸收 + 驻波干涉 + 共鸣点阈值点亮 | `games/ripple-song/` | ✅ 28/28 | ✅ 9/9 | ✅ | 🚧 阶段 3/4 | https://（部署后回填） | 开发中 |
 
 ## 进度快照（2026-11-27）
 
@@ -29,7 +29,7 @@
 | tetra-cascade | 39 | 3 | 0 | ✗ | ⏳ 待修（**审计报告缺失，需先补审计**） |
 | ball-foundry | 39 | 2 | 0 | ✗ | ⏳ 待修（**审计报告缺失，需先补审计**） |
 | townscript | 42 | 6 | 20 | ✅ | ✅ 已过（3 条 P0 存档级缺陷已修） |
-| ripple-song | 27 | 3 | 20 | ✅ | 🚧 阶段 2/4（WebGL2 主渲染 + 粒子层 + 标记动效已成型，音频/手感层与总验收待做） |
+| ripple-song | 28 | 9 | 20 | ✅ | 🚧 阶段 3/4（音频 + 手感层已成型，端到端可真实通关；只剩阶段 4 总验收） |
 
 > ⚠️ 平台 Token Plan 额度会耗尽并自动暂停定时任务（`paused_after_failures` / 错误码 2067）。
 > 已发生两次（11-25 晚、11-26 20:41），均靠 `cron_update enabled=true` 恢复。
@@ -96,7 +96,10 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 架构铁律：**波场模拟只在 JS 里跑，GPU 只负责把波场画出来，绝不让 shader 成为规则的第二实现。**
 详见 `games/ripple-song/docs/{proposal,design,plan}.md`。
 
-**下一轮目标**：`ripple-song` 阶段 3（WebAudio 合成 + 程序化混响 + 手感层：震屏 / 连击音阶）。
+**下一轮目标**：`ripple-song` 阶段 4（交付验收）：写 `docs/acceptance.md`（20 项 F-ID 逐条）、
+双端截图人工核对、`node scripts/gate.mjs games/ripple-song` 全绿、部署后 curl 验证 200。
+**注意**：玩法链路已端到端验证可通关（把波源挪到标准解 → 全部共鸣点点亮 → 结算），
+阶段 4 只需把这条已验证的链路写进验收记录，不再改规则。
 存量待修清单里仍有 `tetra-cascade`、`ball-foundry` 两款，审计报告都还缺，需自建审计后修。
 它与 ball-foundry **都还没有审计报告**（审计 agent 曾因 Token Plan 额度耗尽中断），
 所以下一轮的第一件事是**自建审计**（照 townscript 的做法：README 逐条核对 → 源码比对 →
