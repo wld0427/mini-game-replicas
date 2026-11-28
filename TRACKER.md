@@ -17,7 +17,7 @@
 | 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
 | 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 42/42 | ✅ 6/6 | ✅ | ✅ 已过 | https://p8lzhxknhoedg.space.mcode.cn | 已交付 |
-| 7 | Ripple Song 涟歌 | 波场物理解谜（新立项） | 你不能点亮目标，你只能移动波：160×90 波动方程场 + 相干波源 + 礁石吸收 + 驻波干涉 + 共鸣点阈值点亮 | `games/ripple-song/` | ✅ 27/27 | ✅ 3/3 | ✅ | 🚧 阶段 2/4 | https://（部署后回填） | 开发中 |
+| 7 | Ripple Song 涟歌 | 波场物理解谜（新立项） | 你不能点亮目标，你只能移动波：160×90 波动方程场 + 相干波源 + 礁石吸收 + 驻波干涉 + 共鸣点阈值点亮 | `games/ripple-song/` | ✅ 27/27 | ✅ 3/3 | ✅ | 🚧 阶段 2/4 | https://9tnjq6fe8zdgo.space.mcode.cn | 开发中 |
 
 ## 进度快照（2026-11-27）
 
@@ -116,7 +116,7 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 | Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
 | Ball Foundry | https://rhgu3kwxcpak6.space.mcode.cn | 2026-11-25 |
 | Townscript 城痕 | https://p8lzhxknhoedg.space.mcode.cn | 2026-11-27（门禁 + P0 存档缺陷修复后重新部署；旧地址 https://5bqw3wzkboaey.space.mcode.cn） |
-| Ripple Song 涟歌 | https://qjlr2s1dmcuqv.space.mcode.cn | 2026-11-27（阶段 1：逻辑层 + 2D 回退渲染，尚未过总门禁） |
+| Ripple Song 涟歌 | https://9tnjq6fe8zdgo.space.mcode.cn | 2026-11-28（阶段 2：逻辑层 + WebGL2 渲染 + 粒子层，尚未过总门禁；前一版 https://qjlr2s1dmcuqv.space.mcode.cn） |
 
 ## GitHub 同步状态
 
