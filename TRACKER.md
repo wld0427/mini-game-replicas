@@ -14,7 +14,7 @@
 | 1 | Kanji Rush | `kanjigacha.com`（ドパ漢字ガチャ） | 汉字扭蛋：频次定稀有度、越抽越快、保底、图鉴、成就 | `games/kanji-rush/` | ✅ 19/19 | ✅ 2/2 | ✅ | ✅ 已过 | https://fe84dtppzvcch.space.mcode.cn | 已交付 |
 | 2 | Element Forge 元素熔炉 | Infinite Craft 式元素合成 | 两两熔炼：106 词条合成表 + 中文构词法原创合成 + 确定性结果 + 稀有度分层 + 图鉴 + 每日灵感保底（跨日累计） | `games/element-forge/` | ✅ 46/46 | ✅ 9/9 | ✅ | ✅ 已过 | https://zr6vv3h2bn8e3.space.mcode.cn | 已交付 |
 | 3 | Angler's Almanac 渔汛录 | 休闲钓鱼 / 图鉴收集类 | 抛竿 → 咬钩窗口 → 起竿 → 遛鱼收放线：44 鱼种图鉴 + 5 档稀有度 + 水层解锁 + 4 件装备 + 保底 | `games/angler-almanac/` | ✅ 43/43 | ✅ 7/7 | ✅ | ✅ 已过 | https://3kvg1airu5chk.space.mcode.cn | 已交付 |
-| 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://y9d2m3o4y6ve9.space.mcode.cn | 已交付 |
+| 4 | Tetra Cascade 无尽方块 | 经典下落消行类 | 7-bag 随机 + 自研旋转踢墙 + 幽灵块 + 暂存 + 消行连击 + 等级加速 + 7 种方块图鉴（21 条里程碑）+ 今日挑战 | `games/tetra-cascade/` | ✅ 39/39 | ✅ 3/3 | ✅ | ⏳ 待修复 | https://lev4sx9p9ts9d.space.mcode.cn | 已交付 |
 | 5 | Ball Foundry 落球坊 | 物理弹球 / 增量经营类 | 确定性物理沙盒：定步长模拟 + 7 种材质手感 + 堆叠结算 + 4 项工坊升级 + 材质图鉴（21 条里程碑）+ 保底 | `games/ball-foundry/` | ✅ 39/39 | ✅ 2/2 | ✅ | ⏳ 待修复 | https://rhgu3kwxcpak6.space.mcode.cn | 已交付 |
 | 6 | Townscript 城痕 | Townscaper 式程序化城镇 | 上下文生成城镇沙盒：值噪声地形 + 地脉扩张 + 起楼叠层 + 10 种地标约束 + 每日岛屿 + 城镇代码分享 + 图鉴里程碑 | `games/townscript/` | ✅ 42/42 | ✅ 6/6 | ✅ | ✅ 已过 | https://p8lzhxknhoedg.space.mcode.cn | 已交付 |
 | 7 | Ripple Song 涟歌 | 波场物理解谜（新立项） | 你不能点亮目标，你只能移动波：160×90 波动方程场 + 相干波源 + 礁石吸收 + 驻波干涉 + 共鸣点阈值点亮 | `games/ripple-song/` | ✅ 32/32 | ✅ 7/7 | ✅ | ✅ 已过 | https://1kmv6wsqypd39.space.mcode.cn | 已交付 |
@@ -125,7 +125,7 @@ element-forge 38/38、angler-almanac 45/45 全绿，但存在
 | Kanji Rush | https://g9b1erxsbe91s.space.mcode.cn | 2026-11-27（14 项缺陷修复后重新部署；前一版 https://fe84dtppzvcch.space.mcode.cn） |
 | Element Forge | https://zr6vv3h2bn8e3.space.mcode.cn | 2026-11-26（门禁修复 + 审计空洞修复后重新部署；前一版 https://glihx7ovioszc.space.mcode.cn，首版 https://h3insrj3ydjpe.space.mcode.cn） |
 | Angler's Almanac | https://sw066j4tihcyh.space.mcode.cn | 2026-11-25 |
-| Tetra Cascade | https://y9d2m3o4y6ve9.space.mcode.cn | 2026-11-25 |
+| Tetra Cascade | https://lev4sx9p9ts9d.space.mcode.cn | 2026-11-28（审计完成、修复待做；旧地址 https://y9d2m3o4y6ve9.space.mcode.cn） |
 | Ball Foundry | https://rhgu3kwxcpak6.space.mcode.cn | 2026-11-25 |
 | Townscript 城痕 | https://p8lzhxknhoedg.space.mcode.cn | 2026-11-27（门禁 + P0 存档缺陷修复后重新部署；旧地址 https://5bqw3wzkboaey.space.mcode.cn） |
 | Ripple Song 涟歌 | https://1kmv6wsqypd39.space.mcode.cn | 2026-11-28（四道门禁全绿：逻辑层 + WebGL2 + 粒子层 + 音频手感层 + 交付验收；前一版 https://y954pn14420m8.space.mcode.cn） |
