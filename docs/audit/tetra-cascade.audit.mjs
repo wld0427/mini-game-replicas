@@ -7,7 +7,7 @@ import {
   pieceCells, gravityInterval, mulberry32, hashString, dailySeed,
   createProfile, accumulate, emptySnapshot, snapshot, dexProgress,
   serializeProfile, deserializeProfile, recordGame,
-} from '/workspace/mini-game-replicas/games/tetra-cascade/src/logic.js';
+} from '../../games/tetra-cascade/src/logic.js';
 
 const problems = [];
 const ok = (m) => console.log('  ✓', m);

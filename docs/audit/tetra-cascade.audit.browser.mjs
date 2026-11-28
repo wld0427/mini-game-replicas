@@ -1,8 +1,6 @@
-import path from 'node:path';
-import { startServer, loadChromium } from '/workspace/mini-game-replicas/games/tetra-cascade/test/helpers.mjs';
+import { startServer, loadChromium } from '../../games/tetra-cascade/test/helpers.mjs';
 
 const root = '/workspace/mini-game-replicas/games/tetra-cascade';
-const out = '/workspace/preview';
 const chromium = await loadChromium();
 const { server, port } = await startServer(root);
 const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -42,7 +40,6 @@ console.log('=== A. 首屏：棋盘是否可见 ===');
     if (alpha >= 0.7) bad(`首屏遮罩不透明度 ${alpha}，棋盘被盖住（棋盘 ${info.boardH}px 高全被罩住，玩家看不到网格）`);
     else ok(`首屏遮罩不透明度 ${alpha}，棋盘仍透出`);
   }
-  await page.screenshot({ path: path.join(out, 'tc-audit-title.png'), fullPage: true });
 }
 
 console.log('\n=== B. 首屏：「下一个」与「暂存」预览框 ===');
