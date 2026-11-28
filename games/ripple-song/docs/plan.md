@@ -134,8 +134,8 @@ node scripts/review.mjs games/ripple-song
 **期望输出**：
 
 ```
-# tests 37
-# pass 37
+# tests 39
+# pass 39
 # fail 0
 
 ✓ 静态审查通过：检查了 1 个项目，未发现问题。
@@ -192,6 +192,16 @@ curl -s -o /dev/null -w '%{http_code}\n' https://<部署域名>/
 ```
 
 **完成标准**：总门禁退出码 0；20 项功能四向追溯完整；双端截图已人工看过；部署后首页 200。
+
+**阶段 4 产出（已完成）**：`docs/acceptance.md`（20 项 F-ID 逐条验收 + 视觉打磨表 +
+难度契约落地表 + 本轮修掉的 7 个真问题 + 已知问题）、
+`docs/shots/{desktop,mobile}{,-win}.png`（四张：首屏 + 通关态，桌面 + 移动，全部人工看过）。
+另外补了两条把弱断言变成真断言的用例：
+「WebGL2 不可用时回退 2D canvas，玩法不受影响」（拦截 `getContext('webgl2')` 返回 null，
+断言 `data-mode=2d` + 仍画出波场 + 仍能移动波源）、
+「多语言：zh / en / ja 切换后界面文案与 html[lang] 同步且持久化」。
+
+**阶段 4 顺手修掉的问题**：难度契约三条用例误标 `@covers F-020`（实为胜负判定 F-010）→ 已改标。
 
 ## 阶段门禁规则
 

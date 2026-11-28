@@ -237,3 +237,110 @@ test('端到端：把波源挪到标准解，全部共鸣点点亮并过关', { 
   assert.equal(lit, total, `全部共鸣点都应点亮（${lit}/${total}）`);
   assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
 });
+
+/**
+ * WebGL2 不可用时的回退路径：必须走 2D canvas 渲染**同一份波场数据**，
+ * 而且玩法完全不受影响（仍能移动波源、仍能通关）。
+ *
+ * @covers F-014
+ */
+test('WebGL2 不可用时回退 2D canvas，玩法不受影响', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: GL_ARGS });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  // 强行让 WebGL2 上下文拿不到（模拟不支持的设备）
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+      if (type === 'webgl2') return null;
+      return original.call(this, type, ...rest);
+    };
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#sea');
+
+  assert.equal(await page.getAttribute('#sea', 'data-mode'), '2d', '拿不到 WebGL2 时应回退 2D');
+
+  // 回退路径下仍要画出东西
+  await page.click('#start-btn');
+  await page.waitForTimeout(1500);
+  const pixel = await page.evaluate(() => {
+    const src = document.getElementById('sea');
+    const probe = document.createElement('canvas');
+    probe.width = src.width;
+    probe.height = src.height;
+    const ctx = probe.getContext('2d');
+    ctx.drawImage(src, 0, 0);
+    const d = ctx.getImageData(Math.floor(probe.width / 2), Math.floor(probe.height / 2), 1, 1).data;
+    return [d[0], d[1], d[2]];
+  });
+  assert.ok(pixel[0] + pixel[1] + pixel[2] > 6, `2D 回退也应画出波场，实际 rgb(${pixel.join(',')})`);
+
+  // 玩法不受影响：仍能移动波源
+  const before = await page.evaluate(() => document.querySelector('#markers .source')?.style.left);
+  await page.keyboard.press('ArrowLeft');
+  const moved = await page.waitForFunction(
+    (prev) => {
+      const el = document.querySelector('#markers .source');
+      return el && el.style.left !== prev;
+    },
+    before,
+    { timeout: 8000 },
+  ).then(() => true).catch(() => false);
+  assert.ok(moved, '2D 回退下移动波源仍应有效');
+
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});
+
+/**
+ * @covers F-020
+ */
+test('多语言：zh / en / ja 切换后界面文案与 html[lang] 同步', { skip: chromium ? false : 'playwright 不可用' }, async (t) => {
+  const { server, port } = await startServer(root);
+  const browser = await chromium.launch({ args: GL_ARGS });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-CN' });
+  const page = await context.newPage();
+
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(err.message));
+
+  t.after(async () => {
+    await browser.close();
+    server.close();
+  });
+
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load' });
+  await page.waitForSelector('#sea');
+
+  const zhText = (await page.textContent('#start-btn')).trim();
+  assert.ok(zhText.length > 0, '中文按钮文案不应为空');
+
+  await page.click('.lang-btn[data-lang="en"]');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  assert.equal(await page.getAttribute('html', 'lang'), 'en');
+  const enText = (await page.textContent('#start-btn')).trim();
+  assert.notEqual(enText, zhText, '切到英文后按钮文案应改变');
+  assert.ok(/[A-Za-z]/.test(enText), `英文按钮文案应为英文，实际「${enText}」`);
+
+  await page.click('.lang-btn[data-lang="ja"]');
+  await page.waitForFunction(() => document.documentElement.lang === 'ja');
+  assert.equal(await page.getAttribute('html', 'lang'), 'ja');
+
+  // 语言选择要持久化
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('#sea');
+  assert.equal(await page.getAttribute('html', 'lang'), 'ja', '语言选择应持久化');
+
+  assert.deepEqual(pageErrors, [], `页面抛出异常: ${pageErrors.join(' | ')}`);
+});

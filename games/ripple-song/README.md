@@ -45,7 +45,8 @@ ripple-song/
 │   ├── logic.test.mjs  23 条单元测试（波场 / 规则 / 难度契约）
 │   ├── fx.test.mjs     4 条粒子层单测
 │   ├── audio.test.mjs  5 条音频单测（音阶频率 / 脉冲响应包络）
-│   ├── render.test.mjs 3 条浏览器用例（WebGL2 编译 / 像素非黑 / 三层合成 / 输入）
+│   ├── render.test.mjs 6 条浏览器用例（WebGL2 编译 / 像素非黑 / 三层合成 / 输入 /
+│   │                     2D 回退路径 / 三语切换 / 端到端通关）
 │   ├── audio.browser.test.mjs 1 条浏览器用例（音频上下文 / 混响 / 零音频文件请求）
 │   └── helpers.mjs     静态服务器与 Playwright 装载辅助
 └── docs/
@@ -74,7 +75,9 @@ node --test "test/*.test.mjs"
 覆盖波场积分的确定性、礁石吸收、振幅包络、共鸣点判定、关卡生成的可解性、
 波源移动的边界、胜负与计分、档案往返与脏数据回退、粒子模拟的纯函数性质，
 以及**难度契约三档路线**（参考路线能通关 / 200 次随机走位 0 次通关 / 挂机必败且零分）。
-浏览器用例还会真编译 WebGL2 着色器（断言 info log 为空）并读回画布中心像素证明确实画出了东西。
+浏览器用例还会真编译 WebGL2 着色器（断言 info log 为空）并读回画布中心像素证明确实画出了东西；
+另有 **2D 回退路径**（拦截 WebGL2 后仍能渲染与操作）与 **端到端通关**（用方向键把波源
+挪到标准解 → 全部共鸣点点亮 → 结算）两条关键用例。共 39 条测试。
 
 > headless Chromium 需要 `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`
 > 才能拿到 WebGL2 上下文；拿不到时会自动回退 2D canvas，玩法不受影响。
